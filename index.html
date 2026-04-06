@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omar Alraas | Cybersecurity Specialist</title>
+    <meta name="description" content="Portfolio of Omar Alraas, a Cybersecurity Specialist specialized in web scanning, network mapping, and secure development.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <script src="https://unpkg.com/phosphor-icons"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark-theme">
+    <div id="particles-js"></div>
+
+    <header>
+        <nav id="navbar">
+            <div class="logo">OMAR<span>.ALT</span></div>
+            <ul class="nav-links">
+                <li><a href="#about">About</a></li>
+                <li><a href="#skills">Skills</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#certs">Certifications</a></li>
+                <li><a href="#contact" class="btn">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="hero">
+            <div class="hero-content">
+                <div class="hero-avatar">
+                    <div class="avatar-glow"></div>
+                    <i class="ph-user-focus"></i>
+                </div>
+                <div class="hero-text">
+                    <h1 class="glitch" data-text="Omar Alraas">Omar Alraas</h1>
+                    <div class="type-wrap">
+                        <span id="type-role"></span>
+                    </div>
+                    <p class="hero-subline">Cybersecurity Student @ Canadian University Dubai | Graduating June 2026</p>
+                    <div class="hero-cta">
+                        <a href="#projects" class="btn-primary">View Projects</a>
+                        <a href="#certs" class="btn-secondary">Certifications</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="container">
+            <div class="section-title">
+                <h2>About <span>Me</span></h2>
+                <div class="underline"></div>
+            </div>
+            <div class="about-grid">
+                <div class="about-card glass">
+                    <i class="ph-graduation-cap"></i>
+                    <h3>Education</h3>
+                    <p>Pursuing B.Sc. in Cybersecurity at Canadian University Dubai. Expected completion: June 2026.</p>
+                </div>
+                <div class="about-card glass">
+                    <i class="ph-shield-check"></i>
+                    <h3>Focus</h3>
+                    <p>Highly involved in Hack The Box & picoCTF. Specialized in Web Security, API Fuzzing, and Secure Development.</p>
+                </div>
+                <div class="about-card glass">
+                    <i class="ph-code"></i>
+                    <h3>Development</h3>
+                    <p>Building secure-by-design tools using Python, incorporating AES-256-GCM and custom cryptographic data structures.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Skills Section with 3D Cloud -->
+        <section id="skills" class="container">
+            <div class="section-title">
+                <h2>Technical <span>Arsenal</span></h2>
+                <div class="underline"></div>
+            </div>
+            <div class="skills-wrapper">
+                <div class="tagcloud-container">
+                    <!-- TagCloud.js will inject here -->
+                </div>
+                <div class="skills-details">
+                    <div class="skill-category">
+                        <h4>Security</h4>
+                        <ul>
+                            <li>Web Vulnerability Scanning</li>
+                            <li>API Fuzzing (IDOR, BOLA)</li>
+                            <li>Network Mapping</li>
+                            <li>OWASP Top 10</li>
+                        </ul>
+                    </div>
+                    <div class="skill-category">
+                        <h4>Programming</h4>
+                        <ul>
+                            <li>Python (Automated Tasks)</li>
+                            <li>SQL / Linux Shelling</li>
+                            <li>AES-256-GCM / PBKDF2</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="projects" class="container">
+            <div class="section-title">
+                <h2>Featured <span>Projects</span></h2>
+                <div class="underline"></div>
+            </div>
+            <div class="filter-controls">
+                <button class="filter-btn active" data-filter="all">All Projects</button>
+                <button class="filter-btn" data-filter="security">Security</button>
+                <button class="filter-btn" data-filter="dev">Development</button>
+            </div>
+            <div class="projects-grid" id="project-list">
+                <!-- Dynamic Projects -->
+            </div>
+        </section>
+
+        <!-- Certifications Section -->
+        <section id="certs" class="container">
+            <div class="section-title">
+                <h2>Professional <span>Certificates</span></h2>
+                <div class="underline"></div>
+            </div>
+            <div class="certs-grid">
+                <!-- Dynamic Certs -->
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="container">
+            <div class="section-title">
+                <h2>Get In <span>Touch</span></h2>
+                <div class="underline"></div>
+            </div>
+            <div class="contact-wrapper glass">
+                <div class="contact-info">
+                    <h3>Available for Opportunities</h3>
+                    <p>Currently looking for internship or junior roles in Cybersecurity starting Summer 2026.</p>
+                    <div class="social-links">
+                        <a href="https://github.com/omaralraas" target="_blank"><i class="ph-github-logo"></i></a>
+                        <a href="https://www.linkedin.com/in/omar-alraas-70004b256/" target="_blank"><i class="ph-linkedin-logo"></i></a>
+                    </div>
+                </div>
+                <form id="contact-form">
+                    <input type="text" placeholder="Name" required>
+                    <input type="email" placeholder="Email" required>
+                    <textarea placeholder="Message" rows="5" required></textarea>
+                    <button type="submit" class="btn-primary">Send Secure Message</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="container">
+        <p>&copy; 2026 Omar Alraas. Built with security-first principles.</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/TagCloud@2.2.0/dist/TagCloud.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
