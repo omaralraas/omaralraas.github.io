@@ -1,13 +1,13 @@
 /* Reset & Variables */
 :root {
-    --bg-color: #0a0b10;
-    --card-bg: rgba(16, 18, 27, 0.7);
-    --primary-color: #00f5ff;
-    --primary-glow: rgba(0, 245, 255, 0.4);
-    --secondary-color: #7000ff;
+    --bg-color: #050510;
+    --card-bg: rgba(20, 10, 40, 0.4);
+    --primary-color: #bb86fc;
+    --primary-glow: rgba(187, 134, 252, 0.4);
+    --secondary-color: #6200ee;
     --text-color: #e0e0e0;
-    --text-muted: #888888;
-    --glass-border: rgba(255, 255, 255, 0.1);
+    --text-muted: #a0a0a0;
+    --glass-border: rgba(255, 255, 255, 0.05);
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
