@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- TagCloud.js ---
     const myTags = [
-        'Python', 'Linux', 'SQL', 'Bash',
+        'Python', 'Flask', 'Odoo', 'Linux', 'SQL', 'Bash',
         'AES-256-GCM', 'SHA-256', 'PBKDF2',
         'Web Security', 'API Fuzzing', 'IDOR',
         'Burp Suite', 'Nmap', 'Metasploit',
@@ -55,22 +55,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const projects = [
         {
             title: "Sentinel Web Scanner",
-            desc: "A modular Web Vulnerability Scanner & API Fuzzer for OWASP Top 10, IDOR, and DNS record auditing.",
+            desc: "Modular web vulnerability scanner and API fuzzer for OWASP misconfigurations, IDOR flaws, and dangling DNS records.",
             tag: "security",
             lang: "Python",
             github: "https://github.com/omaralraas/sentinel-web-scanner"
         },
         {
             title: "Secure Password Manager",
-            desc: "Custom-built password manager with salted SHA-256 hashing and dynamic resizing hash-tables.",
-            tag: "dev",
+            desc: "Password manager built from scratch with custom hash tables, dynamic resizing, benchmarking, and salted SHA-256 hashing.",
+            tag: "security",
             lang: "Python",
             github: "https://github.com/omaralraas/custom-hash-table-secure-password-manager"
         },
         {
             title: "Graph Network Mapper",
-            desc: "Network topology simulator using BFS, DFS, and Dijkstra's algorithm for packet path analysis.",
-            tag: "dev",
+            desc: "Graph-based network mapper and packet parsing tree simulator using BFS, DFS, Dijkstra, and tree traversal.",
+            tag: "systems",
             lang: "Python",
             github: "https://github.com/omaralraas/graph-network-mapper"
         },
@@ -83,10 +83,24 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             title: "OTA Proof of Concept",
-            desc: "Simulating secure Over-The-Air updates for automotive systems following ISO/SAE standards.",
+            desc: "Python proof of concept exploring secure over-the-air update flows for connected and automotive systems.",
             tag: "security",
             lang: "Python",
             github: "https://github.com/omaralraas/OTA-POC"
+        },
+        {
+            title: "Odoo Bootcamp",
+            desc: "Odoo Summer Bootcamp 2026 portfolio and knowledge base documenting ERP development learning progress.",
+            tag: "learning",
+            lang: "Odoo",
+            github: "https://github.com/omaralraas/odoo-bootcamp"
+        },
+        {
+            title: "Portfolio Website",
+            desc: "Personal GitHub Pages portfolio presenting cybersecurity projects, certificates, skills, and contact links.",
+            tag: "web",
+            lang: "HTML/CSS/JS",
+            github: "https://github.com/omaralraas/omaralraas.github.io"
         }
     ];
 
@@ -102,8 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3>${p.title}</h3>
                 <p>${p.desc}</p>
                 <div class="project-links">
-                    <a href="${p.github}" target="_blank" title="Source Code"><i class="ph-github-logo"></i></a>
-                    <a href="#" class="no-link" title="Documentation Ready"><i class="ph-file-text"></i></a>
+                    <a href="${p.github}" target="_blank" rel="noopener" title="View on GitHub"><i class="ph-github-logo"></i></a>
                 </div>
             `;
             projectContainer.appendChild(card);
