@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Brochure (TryHackMe) - CTF Write-up</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <style>
+        .writeup-container {
+            max-width: 800px;
+            margin: 120px auto 50px auto;
+            padding: 40px;
+        }
+        h1, h2, h3 {
+            color: var(--primary-color, #00ffcc);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: var(--text-color, #ffffff);
+        }
+        ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        code {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--primary-color, #00ffcc);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        blockquote {
+            border-left: 4px solid var(--primary-color, #00ffcc);
+            padding-left: 20px;
+            font-style: italic;
+            margin-bottom: 25px;
+            opacity: 0.8;
+            color: var(--text-color, #ffffff);
+        }
+        .flag-box {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid var(--primary-color, #00ffcc);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--primary-color, #00ffcc);
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <header>
+        <nav id="navbar" style="background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);">
+            <div class="logo">OMAR</div>
+            <ul class="nav-links">
+                <li><a href="../index.html#writeups" class="btn">Back to Portfolio</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="writeup-container glass">
+        <h1>CTF Write-up: The Brochure (TryHackMe)</h1>
+        
+        <h2>Challenge Overview</h2>
+        <p><strong>Objective:</strong> Investigate a suspicious hotel brochure, track down the digital footprint of a persona, and recover the hidden flag.</p>
+        <blockquote>
+            "The brochure's hero photo carries an unmistakable AI fingerprint, and the account behind it leads somewhere the hotel never intended you to look. Follow the trail, uncover the hidden connection, and find what was left behind."
+        </blockquote>
+
+        <h2>Methodology</h2>
+
+        <h3>Step 1: Technical File Analysis</h3>
+        <p>The challenge started with an image file: <code>thebrochure.png</code>. Given the prompt's mention of an "AI fingerprint," the first logical step was to perform technical forensics on the file itself to see if the flag was embedded in the metadata or hidden within the image binary.</p>
+        <ul>
+            <li>I ran <strong>ExifTool</strong> on <code>thebrochure.png</code> to extract the metadata. The output showed standard PNG tags (dimensions, bit depth, etc.) but no hidden comments or AI generation seeds.</li>
+            <li>I then ran a custom <strong>steganography CLI tool</strong> to check for hidden payloads, which also revealed nothing.</li>
+        </ul>
+        <p>With the technical file forensics returning clean, it became clear the image was just a starting point. The investigation needed to pivot to Open-Source Intelligence (OSINT).</p>
+
+        <h3>Step 2: OSINT Phase 1 (The GitHub Dead End)</h3>
+        <p>The briefing explicitly mentioned a social media persona: <code>@0xMia</code>, alongside the hashtag <code>#HackerHolidays</code>.</p>
+        <p>I began searching across platforms for this username. I successfully located a GitHub account matching the <code>@0xMia</code> handle. I systematically checked the standard areas of interest on the profile:</p>
+        <ul>
+            <li>Repositories</li>
+            <li>Commit history</li>
+            <li>Branches</li>
+        </ul>
+        <p>However, after a thorough review, the GitHub profile yielded no clues and proved to be a dead end. This required broadening the search to other platforms.</p>
+
+        <h3>Step 3: OSINT Phase 2 (Instagram Discovery)</h3>
+        <p>Following the breadcrumbs from the original post ("the account behind it leads somewhere..."), I pivoted my search. Instead of focusing solely on the <code>@0xMia</code> persona, I looked into the hotel mentioned in the briefing: the Byte Lotus Resort.</p>
+        <p>I successfully located the resort's official Instagram account: <strong><code>@thebytelotusresort</code></strong>.</p>
+        <p>While analyzing the account's digital footprint, I looked closely at the accounts that <code>@thebytelotusresort</code> was following. Scattered among those followed accounts, I discovered three fragmented strings of text left behind as a trail:</p>
+        <ul>
+            <li><strong>Part 1:</strong> <code>VEhNe1YzckBzX2FD</code></li>
+            <li><strong>Part 2:</strong> <code>QzB1bnRfaDRzX2Iz</code></li>
+            <li><strong>Part 3:</strong> <code>M25fZjB1bmQhfQ==</code></li>
+        </ul>
+
+        <h3>Step 4: Data Assembly and Decoding</h3>
+        <p>The structure of these strings—specifically the mix of upper/lowercase letters, numbers, and the <code>==</code> padding at the end of the third string—was an immediate indicator of <strong>Base64 encoding</strong>.</p>
+        <p>Because Base64 encodes data in blocks, decoding the strings individually would not work. I concatenated the three parts into a single, continuous string:</p>
+        <p><code>VEhNe1YzckBzX2FDQzB1bnRfaDRzX2IzM25fZjB1bmQhfQ==</code></p>
+        <p>To decode the payload, I input the combined string into <strong>CyberChef</strong> using the "From Base64" recipe.</p>
+
+        <h2>Conclusion</h2>
+        <p>Decoding the Base64 string successfully revealed the hidden message and the final flag for the challenge:</p>
+        
+        <div class="flag-box">
+            THM{V3r@s_aCC0unt_h4s_b33n_f0und!}
+        </div>
+    </main>
+</body>
+</html>
