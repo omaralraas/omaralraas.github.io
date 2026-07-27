@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTF Write-ups | Omar Alraas</title>
+    <meta name="description" content="CTF challenge write-ups by Omar Alraas covering OSINT, steganography, web exploitation, and more.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/phosphor-icons"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <style>
+        .writeups-page {
+            max-width: 900px;
+            margin: 120px auto 60px;
+            padding: 0 20px;
+        }
+
+        .writeups-page .section-title {
+            margin-bottom: 40px;
+        }
+
+        .writeup-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .writeup-entry {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 30px 35px;
+            transition: var(--transition);
+        }
+
+        .writeup-entry:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .writeup-info {
+            flex: 1;
+        }
+
+        .writeup-info h3 {
+            color: #fff;
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+        }
+
+        .writeup-info p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .writeup-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .writeup-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--primary-color);
+            background: var(--primary-glow);
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .writeup-arrow {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-left: 25px;
+            transition: var(--transition);
+        }
+
+        .writeup-entry:hover .writeup-arrow {
+            transform: translateX(5px);
+        }
+
+        .writeup-entry a {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 40px;
+            transition: var(--transition);
+        }
+
+        .back-link:hover {
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .writeup-entry {
+                padding: 20px;
+            }
+            .writeup-info h3 {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <header>
+        <nav id="navbar" style="background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);">
+            <div class="logo">OMAR</div>
+            <ul class="nav-links">
+                <li><a href="../index.html#about">About</a></li>
+                <li><a href="../index.html#skills">Skills</a></li>
+                <li><a href="../index.html#projects">Projects</a></li>
+                <li><a href="./" style="color: var(--primary-color);">Write-ups</a></li>
+                <li><a href="../index.html#certs">Certifications</a></li>
+                <li><a href="../index.html#contact" class="btn">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="writeups-page">
+        <a href="../index.html" class="back-link">
+            <i class="ph-arrow-left"></i> Back to Portfolio
+        </a>
+
+        <div class="section-title">
+            <h2>CTF <span>Write-ups</span></h2>
+            <div class="underline"></div>
+        </div>
+
+        <div class="writeup-list">
+
+            <!-- Write-up Entry: The Brochure -->
+            <div class="writeup-entry glass">
+                <a href="byte-lotus-hotel.html">
+                    <div class="writeup-info">
+                        <h3>The Brochure</h3>
+                        <p>Investigating a suspicious hotel brochure, tracking down the digital footprint of a persona, and recovering the hidden flag via OSINT.</p>
+                        <div class="writeup-tags">
+                            <span class="writeup-tag">TryHackMe</span>
+                            <span class="writeup-tag">OSINT</span>
+                            <span class="writeup-tag">Base64</span>
+                        </div>
+                    </div>
+                    <span class="writeup-arrow">&rarr;</span>
+                </a>
+            </div>
+
+            <!-- Add more write-ups here by copying the block above -->
+
+        </div>
+    </main>
+
+    <footer class="container">
+        <p>&copy; 2026 Omar Alraas. Built with security-first principles.</p>
+    </footer>
+</body>
+</html>
