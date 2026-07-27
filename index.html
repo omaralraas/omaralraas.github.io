@@ -137,7 +137,10 @@
                 <h2>CTF <span>Write-ups</span></h2>
                 <div class="underline"></div>
             </div>
-            <div class="projects-grid">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <button id="toggle-writeups" class="btn-primary" style="cursor: pointer;">Show Write-ups</button>
+            </div>
+            <div class="projects-grid" id="writeups-content" style="display: none;">
                 <div class="about-card glass" style="text-align: left;">
                     <h3 style="margin-bottom: 10px;">The Brochure (TryHackMe)</h3>
                     <p style="margin-bottom: 20px;">Investigating a suspicious hotel brochure, tracking down the digital footprint of a persona, and recovering the hidden flag via OSINT.</p>
@@ -145,6 +148,19 @@
                 </div>
             </div>
         </section>
+
+        <script>
+            document.getElementById('toggle-writeups').addEventListener('click', function() {
+                var content = document.getElementById('writeups-content');
+                if (content.style.display === 'none') {
+                    content.style.display = 'grid';
+                    this.textContent = 'Hide Write-ups';
+                } else {
+                    content.style.display = 'none';
+                    this.textContent = 'Show Write-ups';
+                }
+            });
+        </script>
 
         <!-- Certifications Section -->
         <section id="certs" class="container">
