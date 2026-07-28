@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Night-Shift Dev (TryHackMe) - CTF Write-up</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <style>
+        .writeup-container {
+            max-width: 800px;
+            margin: 120px auto 50px auto;
+            padding: 40px;
+        }
+        h1, h2, h3 {
+            color: var(--primary-color, #00ffcc);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: var(--text-color, #ffffff);
+        }
+        ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        code {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--primary-color, #00ffcc);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        blockquote {
+            border-left: 4px solid var(--primary-color, #00ffcc);
+            padding-left: 20px;
+            font-style: italic;
+            margin-bottom: 25px;
+            opacity: 0.8;
+            color: var(--text-color, #ffffff);
+        }
+        .flag-box {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid var(--primary-color, #00ffcc);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--primary-color, #00ffcc);
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .meta-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            width: 140px;
+        }
+        .step-label {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--primary-color, #00ffcc);
+            background: var(--primary-glow);
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .denied-box {
+            background: rgba(255, 50, 50, 0.08);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #ff6b6b;
+        }
+        .success-box {
+            background: rgba(0, 255, 150, 0.06);
+            border: 1px solid rgba(0, 255, 150, 0.25);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #69db7c;
+        }
+        .takeaway-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .takeaway-card h4 {
+            color: var(--primary-color, #00ffcc);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .takeaway-card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <header>
+        <nav id="navbar" style="background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);">
+            <div class="logo">OMAR</div>
+            <ul class="nav-links">
+                <li><a href="./">← All Write-ups</a></li>
+                <li><a href="../index.html" class="btn">Portfolio</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="writeup-container glass">
+        <h1>CTF Write-up: The Night-Shift Dev</h1>
+        
+        <table class="meta-table">
+            <tr><td>Event</td><td>Hacker Holidays · The Byte Lotus Hotel</td></tr>
+            <tr><td>Platform</td><td>TryHackMe</td></tr>
+            <tr><td>Category</td><td>🌐 Web</td></tr>
+            <tr><td>Difficulty</td><td>Very Easy</td></tr>
+            <tr><td>Points</td><td>30</td></tr>
+            <tr><td>Tags</td><td>Web Directory Enumeration · Git Exposure · Source Code Leak</td></tr>
+        </table>
+
+        <h2>Challenge Overview</h2>
+        <p><strong>Objective:</strong> Discover an exposed source code repository on the Byte Lotus guest-experience web platform and recover the hidden flag.</p>
+        <blockquote>
+            "He booked the quiet room. It's not on the floor plan, not in the brochure, not on any door. But port 8080 is wide open, and the rooms it never lists are the ones worth finding."
+        </blockquote>
+        <p>The challenge tells us that the Byte Lotus guest-experience platform was deployed in a hurry and the night-shift developer "shipped more than the website." The itinerary is clear: dump exposed source code and find the flag. The mention of hidden rooms and unlisted paths immediately points toward <strong>web directory enumeration</strong>.</p>
+
+        <h2>Methodology</h2>
+
+        <h3><span class="step-label">STEP 1</span> Manual Reconnaissance</h3>
+        <p>Before reaching for any automated tools, I started by visiting the target website at <code>http://MACHINE_IP:8080</code> in my browser. I conducted initial manual reconnaissance:</p>
+        <ul>
+            <li>Inspected the page source code for any hidden comments, hardcoded paths, or developer notes.</li>
+            <li>Checked for common directories manually by navigating to paths like <code>/admin</code>, <code>/Rooms</code>, and <code>/login</code>.</li>
+            <li>Reviewed the HTML, CSS, and JavaScript files loaded by the page for any references to internal endpoints.</li>
+        </ul>
+        <div class="denied-box">
+            ✗ No hidden paths, comments, or clues were found through manual inspection.
+        </div>
+        <p>Manual browsing yielded nothing useful. It was time to bring in automated enumeration tools.</p>
+
+        <h3><span class="step-label">STEP 2</span> Directory Enumeration with Gobuster</h3>
+        <p>The challenge briefing explicitly mentioned that "the rooms it never lists are the ones worth finding" — a direct hint toward <strong>directory enumeration</strong>. This technique uses a wordlist to brute-force common directory and file names against a web server, looking for paths that aren't linked anywhere on the site but still respond.</p>
+        <p>I used <strong>Gobuster</strong> with the <code>common.txt</code> wordlist as a starting point:</p>
+        <pre>gobuster dir -u http://MACHINE_IP:8080 -w /usr/share/wordlists/dirb/common.txt</pre>
+        <p>Gobuster quickly completed its scan and returned a single, critical result:</p>
+        <div class="success-box">
+            ✓ FOUND — .git/HEAD (Status: 200) [Size: 21]
+        </div>
+        <p>A <strong>Status 200</strong> response on <code>.git/HEAD</code> confirmed that the web server was exposing its entire <code>.git</code> directory to the public. This is a well-known and dangerous misconfiguration — it means the developer deployed the application directly from a Git repository and forgot to exclude the <code>.git</code> folder, effectively leaking the entire source code history of the project.</p>
+
+        <h3><span class="step-label">STEP 3</span> Dumping the Exposed Git Repository</h3>
+        <p>A <code>.git</code> directory cannot simply be browsed through a web browser — its contents are binary objects, refs, and packfiles. To reconstruct the full repository from the exposed files, I used a specialized tool called <strong>git-dumper</strong>.</p>
+        <p>I installed <code>git-dumper</code> on my Kali machine using <code>pipx</code>:</p>
+        <pre>pipx install git-dumper</pre>
+        <p>Then I ran it against the target to download the entire repository:</p>
+        <pre>git-dumper http://MACHINE_IP:8080/.git/ website-source</pre>
+        <p><code>git-dumper</code> systematically fetched all Git objects, references, and packfiles from the exposed <code>.git</code> directory and rebuilt a fully functional local copy of the repository in the <code>website-source</code> folder.</p>
+
+        <h3><span class="step-label">STEP 4</span> Extracting the Flag</h3>
+        <p>With the repository successfully cloned to my local machine, I navigated into the <code>website-source</code> directory and began examining the files. The flag was sitting in plain sight inside the project's <code>README.md</code> file — left behind by the night-shift developer who clearly shipped more than just the website.</p>
+        <pre>cd website-source
+cat README.md</pre>
+        <div class="success-box">
+            ✓ FLAG CAPTURED — Found directly in README.md
+        </div>
+
+        <h2>Flag</h2>
+        <div class="flag-box">
+            🚩 Flag found in README.md
+        </div>
+
+        <h2>Key Takeaways</h2>
+        <p>This challenge demonstrates a real-world vulnerability that is alarmingly common in production environments:</p>
+
+        <div class="takeaway-card">
+            <h4>📂 Exposed .git Directories</h4>
+            <p>Deploying a project by copying the entire working directory (including <code>.git</code>) to a web server is one of the most common deployment mistakes. It exposes the full source code, commit history, credentials, and internal notes to anyone who knows to look for it.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🔍 Directory Enumeration is Essential</h4>
+            <p>The <code>.git</code> folder was never linked from the website itself. Without running a directory enumeration tool like Gobuster, there would have been no indication it existed. This reinforces why automated enumeration is a fundamental step in any web application assessment.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>📝 Wordlist Selection Matters</h4>
+            <p>The <code>common.txt</code> wordlist was sufficient to find the <code>.git/HEAD</code> endpoint in this case. However, more obscure paths may require larger wordlists such as <code>directory-list-2.3-medium.txt</code>. Choosing the right wordlist — or escalating to progressively larger ones — is a key part of effective enumeration.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🛡️ Defensive Recommendation</h4>
+            <p>Web servers should be configured to explicitly deny access to <code>.git</code> directories. In Nginx, this can be done with <code>location ~ /\.git { deny all; }</code>. In Apache, use <code>RedirectMatch 404 /\.git</code>. Additionally, deployment pipelines should never copy <code>.git</code> folders to production — use <code>git archive</code> or a proper CI/CD build step instead.</p>
+        </div>
+    </main>
+</body>
+</html>
