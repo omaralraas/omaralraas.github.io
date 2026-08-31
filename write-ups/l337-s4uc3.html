@@ -1,0 +1,388 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>l337 S4uc3 (GrrCon 2013) - CTF Write-up | Omar Alraas</title>
+    <meta name="description" content="CyberDefenders l337 S4uc3 write-up — Network Forensics, PCAP analysis, and Host-Based Memory Forensics.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/phosphor-icons"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <style>
+        .writeup-container {
+            max-width: 800px;
+            margin: 120px auto 50px auto;
+            padding: 40px;
+        }
+        h1, h2, h3 {
+            color: var(--primary-color, #00ffcc);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: var(--text-color, #ffffff);
+        }
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 20px;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        code {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--primary-color, #00ffcc);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        blockquote {
+            border-left: 4px solid var(--primary-color, #00ffcc);
+            padding-left: 20px;
+            font-style: italic;
+            margin-bottom: 25px;
+            opacity: 0.8;
+            color: var(--text-color, #ffffff);
+        }
+        .flag-box {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid var(--primary-color, #00ffcc);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--primary-color, #00ffcc);
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .meta-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            width: 140px;
+        }
+        .step-label {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--primary-color, #00ffcc);
+            background: var(--primary-glow);
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .takeaway-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .takeaway-card h4 {
+            color: var(--primary-color, #00ffcc);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .takeaway-card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            transition: var(--transition, 0.3s ease);
+        }
+        .back-btn:hover {
+            color: var(--primary-color, #00ffcc);
+        }
+        
+        table.answers-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 40px;
+            font-size: 0.9rem;
+        }
+        table.answers-table th, table.answers-table td {
+            border: 1px solid var(--glass-border);
+            padding: 12px;
+            text-align: left;
+        }
+        table.answers-table th {
+            color: var(--primary-color);
+            background: rgba(0,0,0,0.3);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        table.answers-table td code {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="dark-theme">
+
+    <header>
+        <nav id="navbar" style="background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);">
+            <div class="logo">OMAR</div>
+            <ul class="nav-links">
+                <li><a href="../index.html#about">About</a></li>
+                <li><a href="../index.html#skills">Skills</a></li>
+                <li><a href="../index.html#projects">Projects</a></li>
+                <li><a href="index.html" style="color: var(--primary-color);">Write-ups</a></li>
+                <li><a href="../index.html#certs">Certifications</a></li>
+                <li><a href="../index.html#contact" class="btn">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="writeup-container glass">
+        <a href="index.html" class="back-btn"><i class="ph-arrow-left"></i> Back to Write-ups</a>
+        
+        <h1>Incident Response: Wayne & Stark Enterprises</h1>
+        
+        <table class="meta-table">
+            <tr>
+                <td>Challenge</td>
+                <td>l337 S4uc3 (GrrCon 2013)</td>
+            </tr>
+            <tr>
+                <td>Category</td>
+                <td>Network & Memory Forensics</td>
+            </tr>
+            <tr>
+                <td>Tools</td>
+                <td>TShark (Wireshark CLI), Volatility 2.6</td>
+            </tr>
+        </table>
+
+        <h2>Executive Summary</h2>
+        <p>Wayne and Stark Enterprises suffered a breach of a critical development asset, <code>development.wse.local</code>, resulting in the theft of top-secret weapon designs. The incident began with an IDS alert flagging active malware on the internal network.</p>
+        <p>Using network traffic analysis (PCAP) and host-based memory forensics, I reconstructed the full attack chain:</p>
+        <ol>
+            <li><strong>Initial infection:</strong> An internal Windows client was compromised by the <strong>Zeus banking trojan</strong>.</li>
+            <li><strong>Web server exploitation:</strong> The Ubuntu web server (<code>development.wse.local</code>) was breached via a vulnerable <strong>phpMyAdmin</strong> instance, giving the attacker a <strong>Metasploit Meterpreter</strong> reverse shell.</li>
+            <li><strong>Data theft:</strong> The attacker pivoted to a password-protected WordPress directory and exfiltrated confidential blueprints.</li>
+        </ol>
+
+        <h2>Environment & Tooling</h2>
+        <p><strong>Evidence provided:</strong></p>
+        <ul>
+            <li><code>IR-Alert.png</code> &mdash; IDS dashboard screenshot</li>
+            <li><code>GrrCON.pcapng</code> &mdash; Full network capture</li>
+            <li><code>webserver.vmss</code> &mdash; VMware suspended-state memory dump</li>
+        </ul>
+        <p><strong>Tools used:</strong></p>
+        <ul>
+            <li><strong>TShark:</strong> Used for packet filtering, TCP stream reassembly, and protocol analysis.</li>
+            <li><strong>Volatility 2.6:</strong> Chosen over Volatility 3 for its mature support and simpler custom-profile generation on this older Ubuntu 10.04 kernel.</li>
+            <li><strong>Custom Volatility profile:</strong> The memory image was paired with a <code>DFIRwebsvr.zip</code> containing <code>System.map-2.6.32-38-server</code> and <code>module.dwarf</code>. Dropping this into Volatility 2's <code>--plugins</code> directory generated a working <code>LinuxUbuntux64</code> profile on the fly.</li>
+        </ul>
+
+        <div class="step-label">Phase 1</div>
+        <h2>Infrastructure & Timeline Mapping</h2>
+        
+        <h3>Public IP of the web server</h3>
+        <pre><code>tshark -r GrrCON.pcapng -Y "http.request" -T fields -e ip.dst -e http.host</code></pre>
+        <p>Isolating HTTP requests for <code>development.wse.local</code> showed the host consistently resolving to a single public IP. <strong>Answer: <code>74.204.41.73</code></strong></p>
+
+        <h3>Capture start time</h3>
+        <pre><code>tshark -r GrrCON.pcapng -T fields -e frame.time_epoch -c 1</code></pre>
+        <p>Frame 1 carries epoch timestamp <code>1378853467.894237000</code> &rarr; <code>2013-09-10 22:51:07 UTC</code>. Converting to EST (UTC-4 at the time of capture) for consistency with later timeline questions: <strong>Answer: <code>18:51:07 EST</code></strong></p>
+
+        <h3>LAN gateway</h3>
+        <pre><code>tshark -r GrrCON.pcapng -Y "arp" -c 20</code></pre>
+        <p><code>172.16.0.1</code> repeatedly issued ARP "who-has" broadcasts and resolved to a WatchGuard MAC address (<code>00:90:7f:80:9e:b9</code>) &mdash; consistent with a WatchGuard firewall/gateway appliance. <strong>Answer: <code>172.16.0.1</code></strong></p>
+
+
+        <div class="step-label">Phase 2</div>
+        <h2>Malware Infection Analysis (Zeus)</h2>
+        
+        <h3>Malware identification and connectivity check</h3>
+        <p>The <code>IR-Alert.png</code> IDS dashboard showed a triggered signature: <em>ET TROJAN Zeus Bot GET to Google checking Internet connectivity</em>, with the destination IP visible in the IP header panel.</p>
+        <ul>
+            <li><strong>Malware:</strong> <code>Zeus</code></li>
+            <li><strong>Connectivity-check destination:</strong> <code>74.125.225.112</code></li>
+        </ul>
+
+        <h3>CNC infrastructure and staging files</h3>
+        <pre><code>tshark -r GrrCON.pcapng -Y "http.request and ip.src == 172.16.0.109" \
+  -T fields -e frame.number -e ip.dst -e http.request.method -e http.request.uri</code></pre>
+        <p>The infected host (<code>172.16.0.109</code>) reached out to <code>88.198.6.20</code> in three stages:</p>
+        <ol>
+            <li>Frame 3472: <code>GET /NewDesign.jpg.exe</code> (Dropper payload)</li>
+            <li>Frame 3510: <code>GET /bt.exe</code> (Zeus loader/executable)</li>
+            <li>Frame 3609: <code>GET /cf.bin</code> (Binary configuration file)</li>
+        </ol>
+        <p>Repeated <code>POST /gt.php</code> requests followed, confirming ongoing C2 check-ins.</p>
+        <ul>
+            <li><strong>CNC IP:</strong> <code>88.198.6.20</code></li>
+            <li><strong>Config file:</strong> <code>cf.bin</code></li>
+            <li><strong>Launch executable:</strong> <code>bt.exe</code></li>
+        </ul>
+
+
+        <div class="step-label">Phase 3</div>
+        <h2>Web Server Compromise</h2>
+        
+        <h3>Service fingerprinting</h3>
+        <pre><code>tshark -r GrrCON.pcapng -z follow,tcp,ascii,117</code></pre>
+        <p>Following a standard <code>200 OK</code> response revealed the server banners directly in the HTTP headers.</p>
+        <ul>
+            <li><strong>PHP version:</strong> <code>5.3.2</code> (<code>X-Powered-By: PHP/5.3.2-1ubuntu4.20</code>)</li>
+            <li><strong>Apache version:</strong> <code>2.2.14</code> (<code>Server: Apache/2.2.14 (Ubuntu)</code>)</li>
+        </ul>
+
+        <h3>WordPress credential capture</h3>
+        <pre><code>tshark -r GrrCON.pcapng -Y "http.request.method == POST and http.request.uri contains "wp-login"" \
+  -T fields -e frame.number -e urlencoded-form.value</code></pre>
+        <p>Frame 4282 (~18:56 EDT) captured a login POST to <code>/wp-login.php</code> for user <code>Jsmith</code>, with the plaintext password sent in the clear. <strong>Answer: <code>wM812ugu</code></strong></p>
+
+        <h3>Protected design page access</h3>
+        <pre><code>tshark -r GrrCON.pcapng -Y "http.request.method == POST and http.request.uri contains "wp-pass""</code></pre>
+        <p>The attacker bypassed a second layer of protection by posting the password <code>1qBeJ2Az</code> to <code>/wp-pass.php</code> (frame 5743), then successfully loaded the protected page <code>/wp/blog/?p=3</code> in frame 5747.</p>
+        <p>Frame 5747 timestamp: <code>1378854244.032499000</code> &rarr; <code>23:04:04 UTC</code>. <strong>Answer: <code>19:04:04 EST</code></strong></p>
+
+        <h3>phpMyAdmin exploitation token</h3>
+        <pre><code>tshark -r GrrCON.pcapng -Y "frame.number == 3897" -T fields -e urlencoded-form.key -e urlencoded-form.value</code></pre>
+        <p>Frame 3897 contains the malicious POST to <code>/pma/index.php</code> (phpMyAdmin) carrying the exploit token. <strong>Answer: <code>b7aad621db97d56771d6316a6d0b71e9</code></strong></p>
+
+        <h3>Shellcode delivery</h3>
+        <pre><code>tshark -r GrrCON.pcapng -Y "udp.port == 31708" -T fields -e ip.src -e udp.srcport</code></pre>
+        <p>IDS signature <em>GPL SHELLCODE x86 inc ebx NOOP</em> pointed to UDP payload delivery on destination port 31708. Tracing the stream back to its source port. <strong>Answer: <code>39709</code></strong></p>
+
+        <h3>Post-exploitation tooling</h3>
+        <pre><code>tshark -r GrrCON.pcapng -Y "frame.number == 5304" -T fields -e http.user_agent</code></pre>
+        <p>The attacker downloaded <code>unimportant.tar.gz</code> from the compromised host; the User-Agent string on that request identified the tool used (<code>Wget/1.13.4 (linux-gnu)</code>). <strong>Answer: <code>Wget</code></strong></p>
+
+        <h3>Kernel fingerprint via Meterpreter</h3>
+        <pre><code>tshark -r GrrCON.pcapng -z follow,tcp,ascii,155</code></pre>
+        <p>TCP stream 155 carries the live Meterpreter session on port 4444. Carving strings from the stream surfaced the output of a <code>sysinfo</code> command. <strong>Answer: <code>2.6.32-38-server</code></strong></p>
+
+
+        <div class="step-label">Phase 4</div>
+        <h2>Host-Based Memory Forensics</h2>
+        <p>With the custom <code>LinuxUbuntux64</code> profile generated, <code>webserver.vmss</code> was analyzed directly.</p>
+
+        <h3>Process tree &mdash; shell spawns</h3>
+        <pre><code>vol.exe --profile=LinuxUbuntux64 -f webserver.vmss linux_pslist</code></pre>
+        <p>The process list showed an <code>apache2</code> worker (PID 1042) spawning a shell (<code>sh</code>, PID 1274), which in turn spawned a second shell (<code>sh</code>, PID 1275) &mdash; a classic web-shell-to-command-shell escalation chain.</p>
+        <ul>
+            <li><strong>Shell binary path:</strong> <code>/bin/sh</code></li>
+            <li><strong>Parent PID:</strong> <code>1042</code></li>
+        </ul>
+
+        <h3>Memory-mapped binary for PID 1274</h3>
+        <pre><code>vol.exe --profile=LinuxUbuntux64 -f webserver.vmss linux_proc_maps -p 1274</code></pre>
+        <p>The first executable memory segment (<code>0x0000000000400000</code>) for PID 1274 mapped to <code>/bin/dash</code>, the actual binary behind Ubuntu's <code>/bin/sh</code> symlink. <strong>Answer: <code>/bin/dash</code></strong></p>
+
+        <h3>Scheduler latency metric</h3>
+        <p>The <code>latency_record_count</code> field in the process's <code>task_struct</code> is a scheduler-tracing counter that stays at its default of <code>0</code> unless latency debugging is explicitly enabled. <strong>Answer: <code>0</code></strong></p>
+
+        <h3>Carving a queued network packet</h3>
+        <pre><code>vol.exe --profile=LinuxUbuntux64 -f webserver.vmss linux_pkt_queues -D ./out
+Get-FileHash -Algorithm MD5 .\out\receive.1105.3</code></pre>
+        <p><code>linux_pkt_queues</code> carved pending per-process packet queues directly from the memory image to disk. Hashing the extracted <code>receive.1105.3</code> file produced its MD5 fingerprint. <strong>Answer: <code>184c8748cfcfe8c0e24d7d80cac6e9bd</code></strong></p>
+
+        <div class="step-label">Conclusion</div>
+        <h2>Final Answer Table</h2>
+        <table class="answers-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Artifact</th>
+                    <th>Answer</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Web server public IP</td><td><code>74.204.41.73</code></td></tr>
+                <tr><td>2</td><td>Capture start time</td><td><code>18:51:07 EST</code></td></tr>
+                <tr><td>3</td><td>PHP version</td><td><code>5.3.2</code></td></tr>
+                <tr><td>4</td><td>Apache version</td><td><code>2.2.14</code></td></tr>
+                <tr><td>5</td><td>Malware family</td><td><code>Zeus</code></td></tr>
+                <tr><td>6</td><td>LAN gateway</td><td><code>172.16.0.1</code></td></tr>
+                <tr><td>7</td><td>Zeus connectivity-check IP</td><td><code>74.125.225.112</code></td></tr>
+                <tr><td>8</td><td>Zeus CNC IP</td><td><code>88.198.6.20</code></td></tr>
+                <tr><td>9</td><td>Zeus config file</td><td><code>cf.bin</code></td></tr>
+                <tr><td>10</td><td>WordPress login password</td><td><code>wM812ugu</code></td></tr>
+                <tr><td>11</td><td>Protected design page access time</td><td><code>19:04:04 EST</code></td></tr>
+                <tr><td>12</td><td>Shellcode source port</td><td><code>39709</code></td></tr>
+                <tr><td>13</td><td>Linux kernel version</td><td><code>2.6.32-38-server</code></td></tr>
+                <tr><td>14</td><td>phpMyAdmin exploit token</td><td><code>b7aad621db97d56771d6316a6d0b71e9</code></td></tr>
+                <tr><td>15</td><td>File transfer tool</td><td><code>Wget</code></td></tr>
+                <tr><td>16</td><td>Zeus launch executable</td><td><code>bt.exe</code></td></tr>
+                <tr><td>17</td><td>Shell binary path</td><td><code>/bin/sh</code></td></tr>
+                <tr><td>18</td><td>Parent PID of web shell</td><td><code>1042</code></td></tr>
+                <tr><td>19</td><td>latency_record_count</td><td><code>0</code></td></tr>
+                <tr><td>20</td><td>Mapped binary for PID 1274</td><td><code>/bin/dash</code></td></tr>
+                <tr><td>21</td><td>MD5 of carved packet file</td><td><code>184c8748cfcfe8c0e24d7d80cac6e9bd</code></td></tr>
+            </tbody>
+        </table>
+
+        <h2>Key Takeaways</h2>
+        <div class="takeaway-card">
+            <h4>Dual-vector compromise</h4>
+            <p>The incident combined a client-side malware infection (Zeus) with an independent server-side web application exploit (phpMyAdmin), a reminder that IR investigations shouldn't assume a single attack path even when one IDS alert dominates the timeline.</p>
+        </div>
+        <div class="takeaway-card">
+            <h4>Plaintext credentials over HTTP</h4>
+            <p>Made both the WordPress compromise and the phpMyAdmin exploit trivial to reconstruct from the packet capture &mdash; a strong argument for enforcing HTTPS end-to-end, including on internal/admin interfaces.</p>
+        </div>
+        <div class="takeaway-card">
+            <h4>Memory forensics closed the loop</h4>
+            <p>Volatility confirmed the exact process lineage (<code>apache2</code> &rarr; <code>sh</code> &rarr; <code>sh</code>) and recovered an in-flight network packet directly from RAM, uncovering details that packet capture alone couldn't.</p>
+        </div>
+
+    </div>
+
+    <footer class="container">
+        <p>&copy; 2026 Omar Alraas. Built with security-first principles.</p>
+    </footer>
+</body>
+</html>
