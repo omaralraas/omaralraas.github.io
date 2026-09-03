@@ -134,6 +134,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // --- Dynamic Home Labs ---
+    const homelabs = [
+        {
+            title: "SOC Home Lab",
+            desc: "Security Operations Center lab environment for threat hunting, log analysis, and incident response simulations.",
+            tag: "homelab",
+            lang: "SIEM / Security",
+            github: "https://github.com/omaralraas/SOC-home-lab"
+        }
+    ];
+
+    const homelabContainer = document.getElementById('homelab-list');
+
+    function displayHomelabs() {
+        homelabContainer.innerHTML = '';
+        homelabs.forEach(lab => {
+            const card = document.createElement('div');
+            card.className = 'project-card glass animate-in';
+            card.innerHTML = `
+                <span class="project-tag">${lab.lang}</span>
+                <h3>${lab.title}</h3>
+                <p>${lab.desc}</p>
+                <div class="project-links">
+                    <a href="${lab.github}" target="_blank" rel="noopener" title="View on GitHub"><i class="ph-github-logo"></i></a>
+                </div>
+            `;
+            homelabContainer.appendChild(card);
+        });
+    }
+    displayHomelabs();
+
     // --- Dynamic Certifications ---
     const certs = [
         "Google Cybersecurity Professional Certificate",
