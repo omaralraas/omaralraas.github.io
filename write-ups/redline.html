@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RedLine Lab (CyberDefenders) - CTF Write-up | Omar Alraas</title>
+    <meta name="description" content="CyberDefenders RedLine Lab write-up — Host-Based Memory Forensics, Volatility 3, Malware Triage, and NIDS Evasion Analysis.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/phosphor-icons"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <style>
+        .writeup-container {
+            max-width: 800px;
+            margin: 120px auto 50px auto;
+            padding: 40px;
+        }
+        h1, h2, h3 {
+            color: var(--primary-color, #00ffcc);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: var(--text-color, #ffffff);
+        }
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 20px;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        code {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--primary-color, #00ffcc);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        blockquote {
+            border-left: 4px solid var(--primary-color, #00ffcc);
+            padding-left: 20px;
+            font-style: italic;
+            margin-bottom: 25px;
+            opacity: 0.8;
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .meta-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            width: 140px;
+        }
+        .step-label {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--primary-color, #00ffcc);
+            background: var(--primary-glow);
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .takeaway-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .takeaway-card h4 {
+            color: var(--primary-color, #00ffcc);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .takeaway-card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+            transition: var(--transition, 0.3s ease);
+        }
+        .back-btn:hover {
+            color: var(--primary-color, #00ffcc);
+        }
+        table.answers-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 40px;
+            font-size: 0.9rem;
+        }
+        table.answers-table th, table.answers-table td {
+            border: 1px solid var(--glass-border);
+            padding: 12px;
+            text-align: left;
+        }
+        table.answers-table th {
+            color: var(--primary-color);
+            background: rgba(0,0,0,0.3);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        table.answers-table td code {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="dark-theme">
+
+    <header>
+        <nav id="navbar" style="background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);">
+            <div class="logo">OMAR</div>
+            <ul class="nav-links">
+                <li><a href="../index.html#about">About</a></li>
+                <li><a href="../index.html#skills">Skills</a></li>
+                <li><a href="../index.html#projects">Projects</a></li>
+                <li><a href="index.html" style="color: var(--primary-color);">Write-ups</a></li>
+                <li><a href="../index.html#certs">Certifications</a></li>
+                <li><a href="../index.html#contact" class="btn">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="writeup-container glass">
+        <a href="index.html" class="back-btn"><i class="ph-arrow-left"></i> Back to Write-ups</a>
+        
+        <h1>Incident Response: RedLine Lab</h1>
+        
+        <table class="meta-table">
+            <tr>
+                <td>Lab Name</td>
+                <td>RedLine Lab</td>
+            </tr>
+            <tr>
+                <td>Provider</td>
+                <td>CyberDefenders</td>
+            </tr>
+            <tr>
+                <td>Category</td>
+                <td>Host Memory Forensics & Malware Triage</td>
+            </tr>
+            <tr>
+                <td>Tools</td>
+                <td>Volatility 3, Volatility 2, WSL / Strings</td>
+            </tr>
+        </table>
+
+        <h2>Executive Summary</h2>
+        <p>A Windows workstation was compromised after an employee downloaded what appeared to be an installer package. Security monitoring noticed suspicious outbound telemetry, but the local Network Intrusion Detection System (NIDS) failed to trigger any high-severity perimeter alerts.</p>
+        <p>As part of the Blue Team response, a physical memory dump (<code>MemoryDump.mem</code>) was acquired for forensic analysis. Using <strong>Volatility 3</strong>, I reconstructed the full intrusion lifecycle:</p>
+        <ol>
+            <li><strong>Initial Staging:</strong> The victim browsed a malicious delivery endpoint masquerading as a gaming repository and dropped a binary (<code>oneetx.exe</code>) into the user's temporary directory.</li>
+            <li><strong>Process Injection:</strong> Upon execution, the malware allocated memory with dangerous <code>PAGE_EXECUTE_READWRITE</code> permissions and spawned a hollowed <code>rundll32.exe</code> child process.</li>
+            <li><strong>NIDS Evasion Mechanism:</strong> The host utilized an active <strong>Outline VPN</strong> connection (Shadowsocks proxy), encapsulating and encrypting all C2 traffic through a local virtual interface (<code>tun2socks.exe</code>), thereby blinding the perimeter NIDS.</li>
+            <li><strong>Threat Attribution:</strong> Memory string analysis linked the command-and-control communication back to known infrastructure distributing the <strong>Redline Stealer</strong> malware family.</li>
+        </ol>
+
+        <h2>Environment & Forensic Tooling</h2>
+        <p><strong>Evidence provided:</strong></p>
+        <ul>
+            <li><code>MemoryDump.mem</code> &mdash; 2 GB raw physical RAM image from the compromised Windows workstation.</li>
+        </ul>
+        <p><strong>Tooling Strategy & The Modern Windows 10 Hurdle:</strong></p>
+        <p>Legacy tools like Volatility 2.6 scan raw memory searching for an unencrypted <code>KDBG</code> structure (<code>_KDDEBUGGER_DATA64</code>). On modern Windows 10 builds (Build 19041+), Microsoft encodes and encrypts this block, causing Volatility 2's <code>imageinfo</code> plugin to fail with <code>No suggestion</code>.</p>
+        <p>To overcome this, the investigation leveraged <strong>Volatility 3</strong>, which bypasses static profile scanning by dynamically resolving kernel symbols (<code>ntkrnlmp.pdb</code>) directly from Microsoft Symbol Servers.</p>
+
+        <div class="step-label">Phase 1</div>
+        <h2>Operating System Baselines & Symbol Resolution</h2>
+        <p>Determining the kernel base and OS architecture is essential for mapping subsequent virtual memory structures:</p>
+        <pre><code>vol.exe -f MemoryDump.mem windows.info</code></pre>
+        <p>Volatility 3 automatically fetched the appropriate PDB symbol package (<code>68A17FAF3012B7846079AEECDBE0A583-1</code>) and surfaced the system configuration:</p>
+        <ul>
+            <li><strong>Operating System:</strong> Windows 10 (Build <code>10.0.19041</code>, 64-bit)</li>
+            <li><strong>Acquisition Timestamp:</strong> <code>2023-05-21 23:02:39 UTC</code></li>
+            <li><strong>Kernel Base:</strong> <code>0xf8076221a000</code></li>
+        </ul>
+
+        <div class="step-label">Phase 2</div>
+        <h2>Process Hierarchy Triage & Rogue Hunting</h2>
+        <p>Examining the hierarchical process tree (<code>pstree</code>) allows analysts to spot execution anomalies that would otherwise blend in when viewing flat process lists:</p>
+        <pre><code>vol.exe -f MemoryDump.mem windows.pstree</code></pre>
+        
+        <h3>1. The Rogue Stager (oneetx.exe)</h3>
+        <p>Analyzing the user session under <code>explorer.exe</code> revealed a process running from an unusual directory path:</p>
+        <pre><code>PID   PPID  ImageFileName  Path
+5896  8844  oneetx.exe     \Device\HarddiskVolume3\Users\Tammam\AppData\Local\Temp\c3912af058\oneetx.exe</code></pre>
+        <p>Legitimate Windows binaries reside in <code>C:\Windows\System32</code> or <code>C:\Program Files</code>. A binary executing out of a subfolder within <code>AppData\Local\Temp\</code> is a classic indicator of a dropped payload.</p>
+        <p><strong>Answer to Q1 (Suspicious Process): <code>oneetx.exe</code></strong></p>
+        <p><strong>Answer to Q7 (Full Path): <code>C:\Users\Tammam\AppData\Local\Temp\c3912af058\oneetx.exe</code></strong></p>
+
+        <h3>2. Child Process Spawning (rundll32.exe)</h3>
+        <p>Looking directly beneath <code>oneetx.exe</code> in the tree hierarchy revealed a child process spawned at <code>22:31:53 UTC</code>:</p>
+        <pre><code>5896  8844  oneetx.exe    ...
+* 7732  5896  rundll32.exe  \Device\HarddiskVolume3\Windows\SysWOW64\rundll32.exe</code></pre>
+        <p>Malware authors routinely spawn native Windows utilities like <code>rundll32.exe</code> as a sacrificial process to hollow out and inject code into (Living-off-the-Land).</p>
+        <p><strong>Answer to Q2 (Child Process): <code>rundll32.exe</code></strong></p>
+
+        <div class="step-label">Phase 3</div>
+        <h2>In-Memory Code Injection & Memory Protection</h2>
+        <p>To confirm whether <code>oneetx.exe</code> performed in-memory unpacking or process injection, I audited the process's Virtual Address Descriptors (VAD) using <code>windows.malfind</code>:</p>
+        <pre><code>vol.exe -f MemoryDump.mem windows.malfind --pid 5896</code></pre>
+        
+        <p>The plugin flagged a suspicious memory allocation:</p>
+        <pre><code>PID   Process     Start VPN  End VPN    Tag   Protection              Notes
+5896  oneetx.exe  0x400000   0x437fff   VadS  PAGE_EXECUTE_READWRITE  MZ header
+
+Hexdump:
+4d 5a 90 00 03 00 00 00 04 00 00 00 ff ff 00 00  MZ..............
+b8 00 00 00 00 00 00 00 40 00 00 00 00 00 00 00  ........@.......</code></pre>
+
+        <p><strong>Forensic Analysis:</strong></p>
+        <ul>
+            <li><strong>Protection Violation:</strong> Operating systems enforce <em>Write XOR Execute</em> (W^X) policies. An unbacked memory page flagged with <strong><code>PAGE_EXECUTE_READWRITE</code></strong> (RWX) indicates code was written into RAM and immediately prepared for dynamic execution.</li>
+            <li><strong>PE Artifacts:</strong> The memory region begins with <code>4D 5A</code> (the classic DOS <code>MZ</code> magic header), proving an unmapped executable or reflective loader was loaded in memory.</li>
+        </ul>
+        <p><strong>Answer to Q3 (Memory Protection): <code>PAGE_EXECUTE_READWRITE</code></strong></p>
+
+        <div class="step-label">Phase 4</div>
+        <h2>Network Connections & Dissecting the NIDS Bypass</h2>
+        <p>To identify the C2 infrastructure and explain why the network intrusion detection system was bypassed, I ran <code>windows.netscan</code>:</p>
+        <pre><code>vol.exe -f MemoryDump.mem windows.netscan</code></pre>
+
+        <h3>1. The Attacker C2 IP</h3>
+        <p>Filtering network sockets by the malicious process PID (<code>5896</code>) revealed an outbound connection on port 80:</p>
+        <pre><code>Proto  Local Address     LocalPort  Foreign Address  ForeignPort  State   PID   Owner
+TCPv4  10.0.85.2         55462      77.91.124.20     80           CLOSED  5896  oneetx.exe</code></pre>
+        <p><strong>Answer to Q5 (Attacker IP): <code>77.91.124.20</code></strong></p>
+
+        <h3>2. Uncovering the NIDS Evasion Vector</h3>
+        <p>Looking further through the active process tree and network sockets revealed an interesting architecture:</p>
+        <pre><code>6724  3580  Outline.exe    \Program Files (x86)\Outline\Outline.exe
+* 4628  6724  tun2socks.exe  ...third_party\outline-go-tun2socks\win32\tun2socks.exe</code></pre>
+        <p><strong>How the bypass functioned:</strong></p>
+        <ul>
+            <li><strong>Outline</strong> is an open-source VPN solution built on the Shadowsocks protocol.</li>
+            <li>The internal process <code>tun2socks.exe</code> intercepted all IP traffic from the endpoint and routed it into an encrypted tunnel.</li>
+            <li>Because the cleartext HTTP connection between <code>oneetx.exe</code> and <code>77.91.124.20</code> was encapsulated inside encrypted VPN traffic, the perimeter NIDS could not inspect packet payloads or match signatures against known malicious C2 patterns.</li>
+        </ul>
+        <p><strong>Answer to Q4 (VPN Process): <code>Outline.exe</code></strong></p>
+
+        <div class="step-label">Phase 5</div>
+        <h2>Payload Delivery & Threat Attribution</h2>
+        <p>With the external IP <code>77.91.124.20</code> identified, I searched the physical memory dump for associated HTTP request logs, referrer headers, and URLs:</p>
+        <pre><code>strings -a MemoryDump.mem | grep -i "77.91.124.20" | grep -i "\.php"</code></pre>
+        <p>This surfaced the delivery URL visited on the remote host:</p>
+        <pre><code>http://77.91.124.20/store/games/index.php</code></pre>
+        <p><strong>Answer to Q6 (PHP URL): <code>http://77.91.124.20/store/games/index.php</code></strong></p>
+
+        <p><strong>Malware Attribution:</strong> Cross-referencing the landing page structure (<code>/store/games/index.php</code>) and C2 endpoint with threat intelligence records confirms the payload as <strong>Redline Stealer</strong>. The threat actor distributed the malware disguised as cracked video games or cheats to harvest saved browser credentials, autocomplete data, credit cards, and cryptocurrency wallets from the victim.</p>
+
+        <div class="step-label">Conclusion</div>
+        <h2>Final Answer Table</h2>
+        <table class="answers-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Question</th>
+                    <th>Answer</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Suspicious process name</td><td><code>oneetx.exe</code></td></tr>
+                <tr><td>2</td><td>Child process of suspicious process</td><td><code>rundll32.exe</code></td></tr>
+                <tr><td>3</td><td>Memory protection applied to injected region</td><td><code>PAGE_EXECUTE_READWRITE</code></td></tr>
+                <tr><td>4</td><td>Process responsible for the VPN connection</td><td><code>Outline.exe</code></td></tr>
+                <tr><td>5</td><td>Attacker's IP address</td><td><code>77.91.124.20</code></td></tr>
+                <tr><td>6</td><td>Full URL of the visited PHP file</td><td><code>http://77.91.124.20/store/games/index.php</code></td></tr>
+                <tr><td>7</td><td>Full path of the malicious executable</td><td><code>C:\Users\Tammam\AppData\Local\Temp\c3912af058\oneetx.exe</code></td></tr>
+            </tbody>
+        </table>
+
+        <h2>Key Takeaways</h2>
+        <div class="takeaway-card">
+            <h4>Modern Windows 10 Demands Volatility 3</h4>
+            <p>Windows 10 Build 19041+ encodes kernel debugger blocks (<code>KDBG</code>), breaking legacy Volatility 2 profile scanners. Volatility 3's dynamic PDB symbol retrieval is essential for modern triage.</p>
+        </div>
+        <div class="takeaway-card">
+            <h4>Encrypted Tunnels Blind Perimeter Defenses</h4>
+            <p>Signature-based NIDS appliances cannot inspect traffic tunneled through client-side VPNs like Outline/Shadowsocks. Robust security architectures require host-based EDR telemetry to detect anomalous socket creation before tunnel encapsulation occurs.</p>
+        </div>
+        <div class="takeaway-card">
+            <h4>RWX Permissions are High-Fidelity IOCs</h4>
+            <p>Legitimate Windows binaries strictly adhere to DEP/W^X. In-memory virtual allocations marked <code>PAGE_EXECUTE_READWRITE</code> paired with MZ headers or shellcode loops are definitive indicators of in-memory execution.</p>
+        </div>
+
+    </div>
+
+    <footer class="container">
+        <p>&copy; 2026 Omar Alraas. Built with security-first principles.</p>
+    </footer>
+</body>
+</html>
