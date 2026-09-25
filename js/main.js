@@ -136,16 +136,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Dynamic Certifications ---
     const certs = [
-        "Google Cybersecurity Professional Certificate",
-        "Automate Cybersecurity Tasks with Python",
-        "Tools of the Trade: Linux and SQL",
-        "Foundations of Cybersecurity",
-        "Sound the Alarm: Detection and Response",
-        "Assets, Threats, and Vulnerabilities",
-        "Play It Safe: Manage Security Risks",
-        "Connect and Protect: Networks and Network Security",
-        "Put It to Work: Prepare for Cybersecurity Jobs",
-        "Accelerate Your Job Search with AI"
+        { name: "Microsoft SC-200: Security Operations Analyst", issuer: "Microsoft" },
+        { name: "Cisco Ethical Hacker", issuer: "Cisco" },
+        { name: "Cisco Introduction to Modern AI", issuer: "Cisco" },
+        { name: "Google Cybersecurity Professional Certificate", issuer: "Google / Coursera" },
+        { name: "Automate Cybersecurity Tasks with Python", issuer: "Google / Coursera" },
+        { name: "Tools of the Trade: Linux and SQL", issuer: "Google / Coursera" },
+        { name: "Foundations of Cybersecurity", issuer: "Google / Coursera" },
+        { name: "Sound the Alarm: Detection and Response", issuer: "Google / Coursera" },
+        { name: "Assets, Threats, and Vulnerabilities", issuer: "Google / Coursera" },
+        { name: "Play It Safe: Manage Security Risks", issuer: "Google / Coursera" },
+        { name: "Connect and Protect: Networks and Network Security", issuer: "Google / Coursera" },
+        { name: "Put It to Work: Prepare for Cybersecurity Jobs", issuer: "Google / Coursera" },
+        { name: "Accelerate Your Job Search with AI", issuer: "Google / Coursera" }
     ];
 
     const certContainer = document.querySelector('.certs-grid');
@@ -154,8 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
         div.className = 'cert-card glass';
         div.innerHTML = `
             <i class="ph-seal-check"></i>
-            <h4>${c}</h4>
-            <span>Issued by Google / Coursera</span>
+            <h4>${c.name}</h4>
+            <span>Issued by ${c.issuer}</span>
         `;
         certContainer.appendChild(div);
     });
