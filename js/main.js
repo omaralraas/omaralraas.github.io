@@ -43,13 +43,19 @@ document.addEventListener('DOMContentLoaded', () => {
         'HTB', 'picoCTF', 'TryHackMe'
     ];
 
-    const tagCloud = TagCloud('.tagcloud-container', myTags, {
-        radius: 200,
-        maxSpeed: 'fast',
-        initSpeed: 'normal',
-        direction: 135,
-        keep: true
-    });
+    try {
+        if (typeof TagCloud === 'function' && document.querySelector('.tagcloud-container')) {
+            TagCloud('.tagcloud-container', myTags, {
+                radius: 200,
+                maxSpeed: 'fast',
+                initSpeed: 'normal',
+                direction: 135,
+                keep: true
+            });
+        }
+    } catch (err) {
+        console.warn('TagCloud initialization skipped:', err);
+    }
 
     // --- Dynamic Projects ---
     const projects = [
@@ -152,16 +158,18 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     const certContainer = document.querySelector('.certs-grid');
-    certs.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'cert-card glass';
-        div.innerHTML = `
-            <i class="ph-seal-check"></i>
-            <h4>${c.name}</h4>
-            <span>Issued by ${c.issuer}</span>
-        `;
-        certContainer.appendChild(div);
-    });
+    if (certContainer && certContainer.children.length === 0) {
+        certs.forEach(c => {
+            const div = document.createElement('div');
+            div.className = 'cert-card glass';
+            div.innerHTML = `
+                <i class="ph-seal-check"></i>
+                <h4>${c.name}</h4>
+                <span>Issued by ${c.issuer}</span>
+            `;
+            certContainer.appendChild(div);
+        });
+    }
 
     // --- Navbar Scroll Effect ---
     window.addEventListener('scroll', () => {
