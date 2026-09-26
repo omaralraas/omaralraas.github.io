@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CTF Write-ups | Omar Alraas</title>
-    <meta name="description" content="CTF challenge write-ups by Omar Alraas covering OSINT, steganography, web exploitation, and more.">
+    <meta name="description" content="CTF challenge write-ups by Omar Alraas categorized by difficulty (Hard, Medium, Easy) covering Active Directory, web exploitation, memory forensics, and reverse engineering.">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,7 +25,110 @@
         }
 
         .writeups-page .section-title {
-            margin-bottom: 40px;
+            margin-bottom: 25px;
+        }
+
+        .filter-controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 45px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: rgba(187, 134, 252, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .filter-btn.active {
+            border-color: var(--primary-color);
+            color: #fff;
+            background: var(--primary-glow);
+            box-shadow: 0 0 15px rgba(187, 134, 252, 0.3);
+        }
+
+        .difficulty-section {
+            margin-bottom: 55px;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .difficulty-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 22px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .diff-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .diff-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 4px 14px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-hard {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.12);
+            border: 1px solid rgba(255, 107, 107, 0.35);
+            box-shadow: 0 0 12px rgba(255, 107, 107, 0.15);
+        }
+
+        .badge-medium {
+            color: #ffd43b;
+            background: rgba(255, 212, 59, 0.12);
+            border: 1px solid rgba(255, 212, 59, 0.35);
+            box-shadow: 0 0 12px rgba(255, 212, 59, 0.15);
+        }
+
+        .badge-easy {
+            color: #51cf66;
+            background: rgba(81, 207, 102, 0.12);
+            border: 1px solid rgba(81, 207, 102, 0.35);
+            box-shadow: 0 0 12px rgba(81, 207, 102, 0.15);
+        }
+
+        .diff-title-wrap h3 {
+            color: #fff;
+            font-size: 1.15rem;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .diff-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 4px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
         }
 
         .writeup-list {
@@ -80,6 +183,24 @@
             border-radius: 4px;
         }
 
+        .writeup-tag.tag-hard {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.12);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .writeup-tag.tag-medium {
+            color: #ffd43b;
+            background: rgba(255, 212, 59, 0.12);
+            border: 1px solid rgba(255, 212, 59, 0.3);
+        }
+
+        .writeup-tag.tag-easy {
+            color: #51cf66;
+            background: rgba(81, 207, 102, 0.12);
+            border: 1px solid rgba(81, 207, 102, 0.3);
+        }
+
         .writeup-arrow {
             font-size: 1.8rem;
             color: var(--primary-color);
@@ -122,6 +243,22 @@
             .writeup-info h3 {
                 font-size: 1.1rem;
             }
+            .difficulty-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .diff-title-wrap {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .filter-controls {
+                gap: 8px;
+            }
+            .filter-btn {
+                padding: 6px 14px;
+                font-size: 0.75rem;
+            }
         }
     </style>
 </head>
@@ -133,6 +270,7 @@
                 <li><a href="../index.html#about">About</a></li>
                 <li><a href="../index.html#skills">Skills</a></li>
                 <li><a href="../index.html#projects">Projects</a></li>
+                <li><a href="../homelabs/">Home Labs</a></li>
                 <li><a href="./" style="color: var(--primary-color);">Write-ups</a></li>
                 <li><a href="../index.html#certs">Certifications</a></li>
                 <li><a href="../index.html#contact" class="btn">Contact</a></li>
@@ -150,208 +288,284 @@
             <div class="underline"></div>
         </div>
 
-        <div class="writeup-list">
-
-            <!-- Write-up Entry: Capture Returns -->
-            <div class="writeup-entry glass">
-                <a href="capture-returns.html">
-                    <div class="writeup-info">
-                        <h3>Capture Returns</h3>
-                        <p>Bypassing defensive anti-automation rate limiting and alternating CAPTCHAs on an administrative portal: combining an image dimension side-channel with a custom multi-scale Tesseract OCR pipeline and state-machine synchronization to execute an automated credential brute-force.</p>
-                        <div class="writeup-tags">
-                            <span class="writeup-tag">TryHackMe</span>
-                            <span class="writeup-tag">Web Exploitation</span>
-                            <span class="writeup-tag">CAPTCHA Bypass</span>
-                            <span class="writeup-tag">Side-Channel</span>
-                            <span class="writeup-tag">OCR Automation</span>
-                        </div>
-                    </div>
-                    <span class="writeup-arrow">&rarr;</span>
-                </a>
-            </div>
-
-            <!-- Write-up Entry: Operation Endgame -->
-            <div class="writeup-entry glass">
-                <a href="operation-endgame.html">
-                    <div class="writeup-info">
-                        <h3>Operation Endgame</h3>
-                        <p>Full Active Directory domain compromise: unauthenticated Kerberoasting via the guest account, password spraying, BloodHound ACL analysis, targeted Kerberoasting through GenericWrite abuse, credential harvesting from an automation script, and privilege escalation to SYSTEM via SMBExec.</p>
-                        <div class="writeup-tags">
-                            <span class="writeup-tag">TryHackMe</span>
-                            <span class="writeup-tag">Active Directory</span>
-                            <span class="writeup-tag">Kerberoasting</span>
-                            <span class="writeup-tag">ACL Abuse</span>
-                            <span class="writeup-tag">Privilege Escalation</span>
-                        </div>
-                    </div>
-                    <span class="writeup-arrow">&rarr;</span>
-                </a>
-            </div>
-
-            <!-- Write-up Entry: Phishing Unfolding (SOC Simulator) -->
-            <div class="writeup-entry glass">
-                <a href="phishing-unfolding.html">
-                    <div class="writeup-info">
-                        <h3>Phishing Unfolding (SOC Simulator)</h3>
-                        <p>Real-time SOC simulation: triaging a multi-stage phishing attack from spearphishing email through PowerShell reverse shell, Active Directory reconnaissance, and covert DNS tunneling exfiltration of financial data.</p>
-                        <div class="writeup-tags">
-                            <span class="writeup-tag">TryHackMe</span>
-                            <span class="writeup-tag">SOC Simulator</span>
-                            <span class="writeup-tag">Phishing</span>
-                            <span class="writeup-tag">SIEM</span>
-                            <span class="writeup-tag">DNS Tunneling</span>
-                        </div>
-                    </div>
-                    <span class="writeup-arrow">&rarr;</span>
-                </a>
-            </div>
-
-            <!-- Write-up Entry: The Brochure -->
-            <div class="writeup-entry glass">
-                <a href="byte-lotus-hotel.html">
-                    <div class="writeup-info">
-                        <h3>The Brochure</h3>
-                        <p>Investigating a suspicious hotel brochure, tracking down the digital footprint of a persona, and recovering the hidden flag via OSINT.</p>
-                        <div class="writeup-tags">
-                            <span class="writeup-tag">TryHackMe</span>
-                            <span class="writeup-tag">OSINT</span>
-                            <span class="writeup-tag">Base64</span>
-                        </div>
-                    </div>
-                    <span class="writeup-arrow">&rarr;</span>
-                </a>
-            </div>
-
-            <!-- Write-up Entry: The Concierge Knows Too Much -->
-            <div class="writeup-entry glass">
-                <a href="concierge-knows-too-much.html">
-                    <div class="writeup-info">
-                        <h3>The Concierge Knows Too Much</h3>
-                        <p>Exploiting identity spoofing and prompt injection against an AI hotel concierge to extract a restricted internal escalation code.</p>
-                        <div class="writeup-tags">
-                            <span class="writeup-tag">TryHackMe</span>
-                            <span class="writeup-tag">AI</span>
-                            <span class="writeup-tag">Prompt Injection</span>
-                            <span class="writeup-tag">Social Engineering</span>
-                        </div>
-                    </div>
-                    <span class="writeup-arrow">&rarr;</span>
-                </a>
-            </div>
-
-            <!-- Write-up Entry: The Night-Shift Dev -->
-            <div class="writeup-entry glass">
-                <a href="the-night-shift-dev.html">
-                    <div class="writeup-info">
-                        <h3>Room 404</h3>
-                        <p>Using web directory enumeration to discover an exposed .git repository on the Byte Lotus hotel platform, then dumping and analyzing the leaked source code to recover the flag.</p>
-                        <div class="writeup-tags">
-                            <span class="writeup-tag">TryHackMe</span>
-                            <span class="writeup-tag">Web</span>
-                            <span class="writeup-tag">Directory Enumeration</span>
-                            <span class="writeup-tag">Git Exposure</span>
-                        </div>
-                    </div>
-                    <span class="writeup-arrow">&rarr;</span>
-                </a>
-            </div>
-
-            <!-- Write-up Entry: Prioritise -->
-            <div class="writeup-entry glass">
-                <a href="prioritise.html">
-                    <div class="writeup-info">
-                        <h3>Prioritise</h3>
-                        <p>Exploiting a blind SQL injection in the ORDER BY clause of a to-do list sorting parameter, using a CASE expression as a boolean oracle to dump a SQLite database.</p>
-                        <div class="writeup-tags">
-                            <span class="writeup-tag">TryHackMe</span>
-                            <span class="writeup-tag">SQL Injection</span>
-                            <span class="writeup-tag">ORDER BY</span>
-                            <span class="writeup-tag">SQLite</span>
-                        </div>
-                    </div>
-                    <span class="writeup-arrow">&rarr;</span>
-                </a>
-            </div>
-
-            <!-- Write-up Entry: Do Not Disturb -->
-            <div class="writeup-entry glass">
-                <a href="do-not-disturb.html">
-                    <div class="writeup-info">
-                        <h3>Do Not Disturb</h3>
-                        <p>Full Boot2Root chain: NoSQL injection auth bypass, EJS template injection to RCE, Node.js Inspector debugger abuse for lateral movement, and raw disk access privilege escalation via the disk group.</p>
-                        <div class="writeup-tags">
-                            <span class="writeup-tag">TryHackMe</span>
-                            <span class="writeup-tag">Boot2Root</span>
-                            <span class="writeup-tag">NoSQL Injection</span>
-                            <span class="writeup-tag">SSTI</span>
-                            <span class="writeup-tag">Privesc</span>
-                        </div>
-                    </div>
-                    <span class="writeup-arrow">&rarr;</span>
-                </a>
-            </div>
-
-            <!-- Write-up Entry: Infinity Pool -->
-            <div class="writeup-entry glass">
-                <a href="infinity-pool.html">
-                    <div class="writeup-info">
-                        <h3>Infinity Pool</h3>
-                        <p>Full Boot2Root chain: command injection via an internal netcheck endpoint, Chisel pivoting to localhost services, FreePBX UCP default credential exploitation, voicemail-stored secrets, and argument injection into a root-level export service.</p>
-                        <div class="writeup-tags">
-                            <span class="writeup-tag">TryHackMe</span>
-                            <span class="writeup-tag">Boot2Root</span>
-                            <span class="writeup-tag">Command Injection</span>
-                            <span class="writeup-tag">Chisel Pivot</span>
-                            <span class="writeup-tag">FreePBX</span>
-                        </div>
-                    </div>
-                    <span class="writeup-arrow">&rarr;</span>
-                </a>
-            </div>
-
-            <!-- Write-up Entry: l337 S4uc3 -->
-            <div class="writeup-entry glass">
-                <a href="l337-s4uc3.html">
-                    <div class="writeup-info">
-                        <h3>l337 S4uc3 (GrrCon 2013)</h3>
-                        <p>A deep dive into network and memory forensics to reconstruct a dual-vector attack involving Zeus malware and a web server exploit.</p>
-                        <div class="writeup-tags">
-                            <span class="writeup-tag">CyberDefenders</span>
-                            <span class="writeup-tag">Network Forensics</span>
-                            <span class="writeup-tag">Memory Forensics</span>
-                            <span class="writeup-tag">PCAP</span>
-                            <span class="writeup-tag">Volatility</span>
-                        </div>
-                    </div>
-                    <span class="writeup-arrow">&rarr;</span>
-                </a>
-            </div>
-
-            <!-- Write-up Entry: RedLine -->
-            <div class="writeup-entry glass">
-                <a href="redline.html">
-                    <div class="writeup-info">
-                        <h3>RedLine Lab</h3>
-                        <p>Investigating a compromised Windows 10 host using Volatility 3 to uncover Redline Stealer, analyze in-memory process injection, and dissect a Shadowsocks VPN tunnel used to bypass perimeter NIDS.</p>
-                        <div class="writeup-tags">
-                            <span class="writeup-tag">CyberDefenders</span>
-                            <span class="writeup-tag">Memory Forensics</span>
-                            <span class="writeup-tag">Volatility 3</span>
-                            <span class="writeup-tag">Malware Analysis</span>
-                            <span class="writeup-tag">Process Injection</span>
-                        </div>
-                    </div>
-                    <span class="writeup-arrow">&rarr;</span>
-                </a>
-            </div>
-
-            <!-- Add more write-ups here by copying the block above -->
-
+        <!-- Difficulty Filter Controls -->
+        <div class="filter-controls">
+            <button class="filter-btn active" data-filter="all">All Challenges (11)</button>
+            <button class="filter-btn" data-filter="hard">Hard (1)</button>
+            <button class="filter-btn" data-filter="medium">Medium (6)</button>
+            <button class="filter-btn" data-filter="easy">Easy (4)</button>
         </div>
+
+        <!-- ==================== HARD SECTION ==================== -->
+        <section class="difficulty-section" data-difficulty-group="hard">
+            <div class="difficulty-header">
+                <div class="diff-title-wrap">
+                    <span class="diff-badge badge-hard">Hard</span>
+                    <h3>Advanced Exploitation & AD Compromise</h3>
+                </div>
+                <span class="diff-count">1 Machine</span>
+            </div>
+
+            <div class="writeup-list">
+                <!-- Write-up Entry: Operation Endgame -->
+                <div class="writeup-entry glass" data-difficulty="hard">
+                    <a href="operation-endgame.html">
+                        <div class="writeup-info">
+                            <h3>Operation Endgame</h3>
+                            <p>Full Active Directory domain compromise: unauthenticated Kerberoasting via the guest account, password spraying, BloodHound ACL analysis, targeted Kerberoasting through GenericWrite abuse, credential harvesting from an automation script, and privilege escalation to SYSTEM via SMBExec.</p>
+                            <div class="writeup-tags">
+                                <span class="writeup-tag tag-hard">Hard</span>
+                                <span class="writeup-tag">TryHackMe</span>
+                                <span class="writeup-tag">Active Directory</span>
+                                <span class="writeup-tag">Kerberoasting</span>
+                                <span class="writeup-tag">ACL Abuse</span>
+                                <span class="writeup-tag">Privilege Escalation</span>
+                            </div>
+                        </div>
+                        <span class="writeup-arrow">&rarr;</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== MEDIUM SECTION ==================== -->
+        <section class="difficulty-section" data-difficulty-group="medium">
+            <div class="difficulty-header">
+                <div class="diff-title-wrap">
+                    <span class="diff-badge badge-medium">Medium</span>
+                    <h3>Web Exploitation, Boot2Root & Forensics</h3>
+                </div>
+                <span class="diff-count">6 Machines</span>
+            </div>
+
+            <div class="writeup-list">
+                <!-- Write-up Entry: Capture Returns -->
+                <div class="writeup-entry glass" data-difficulty="medium">
+                    <a href="capture-returns.html">
+                        <div class="writeup-info">
+                            <h3>Capture Returns</h3>
+                            <p>Bypassing defensive anti-automation rate limiting and alternating CAPTCHAs on an administrative portal: combining an image dimension side-channel with a custom multi-scale Tesseract OCR pipeline and state-machine synchronization to execute an automated credential brute-force.</p>
+                            <div class="writeup-tags">
+                                <span class="writeup-tag tag-medium">Medium</span>
+                                <span class="writeup-tag">TryHackMe</span>
+                                <span class="writeup-tag">Web Exploitation</span>
+                                <span class="writeup-tag">CAPTCHA Bypass</span>
+                                <span class="writeup-tag">Side-Channel</span>
+                                <span class="writeup-tag">OCR Automation</span>
+                            </div>
+                        </div>
+                        <span class="writeup-arrow">&rarr;</span>
+                    </a>
+                </div>
+
+                <!-- Write-up Entry: Phishing Unfolding (SOC Simulator) -->
+                <div class="writeup-entry glass" data-difficulty="medium">
+                    <a href="phishing-unfolding.html">
+                        <div class="writeup-info">
+                            <h3>Phishing Unfolding (SOC Simulator)</h3>
+                            <p>Real-time SOC simulation: triaging a multi-stage phishing attack from spearphishing email through PowerShell reverse shell, Active Directory reconnaissance, and covert DNS tunneling exfiltration of financial data.</p>
+                            <div class="writeup-tags">
+                                <span class="writeup-tag tag-medium">Medium</span>
+                                <span class="writeup-tag">TryHackMe</span>
+                                <span class="writeup-tag">SOC Simulator</span>
+                                <span class="writeup-tag">Phishing</span>
+                                <span class="writeup-tag">SIEM</span>
+                                <span class="writeup-tag">DNS Tunneling</span>
+                            </div>
+                        </div>
+                        <span class="writeup-arrow">&rarr;</span>
+                    </a>
+                </div>
+
+                <!-- Write-up Entry: Prioritise -->
+                <div class="writeup-entry glass" data-difficulty="medium">
+                    <a href="prioritise.html">
+                        <div class="writeup-info">
+                            <h3>Prioritise</h3>
+                            <p>Exploiting a blind SQL injection in the ORDER BY clause of a to-do list sorting parameter, using a CASE expression as a boolean oracle to dump a SQLite database.</p>
+                            <div class="writeup-tags">
+                                <span class="writeup-tag tag-medium">Medium</span>
+                                <span class="writeup-tag">TryHackMe</span>
+                                <span class="writeup-tag">SQL Injection</span>
+                                <span class="writeup-tag">ORDER BY</span>
+                                <span class="writeup-tag">SQLite</span>
+                            </div>
+                        </div>
+                        <span class="writeup-arrow">&rarr;</span>
+                    </a>
+                </div>
+
+                <!-- Write-up Entry: Do Not Disturb -->
+                <div class="writeup-entry glass" data-difficulty="medium">
+                    <a href="do-not-disturb.html">
+                        <div class="writeup-info">
+                            <h3>Do Not Disturb</h3>
+                            <p>Full Boot2Root chain: NoSQL injection auth bypass, EJS template injection to RCE, Node.js Inspector debugger abuse for lateral movement, and raw disk access privilege escalation via the disk group.</p>
+                            <div class="writeup-tags">
+                                <span class="writeup-tag tag-medium">Medium</span>
+                                <span class="writeup-tag">TryHackMe</span>
+                                <span class="writeup-tag">Boot2Root</span>
+                                <span class="writeup-tag">NoSQL Injection</span>
+                                <span class="writeup-tag">SSTI</span>
+                                <span class="writeup-tag">Privesc</span>
+                            </div>
+                        </div>
+                        <span class="writeup-arrow">&rarr;</span>
+                    </a>
+                </div>
+
+                <!-- Write-up Entry: Infinity Pool -->
+                <div class="writeup-entry glass" data-difficulty="medium">
+                    <a href="infinity-pool.html">
+                        <div class="writeup-info">
+                            <h3>Infinity Pool</h3>
+                            <p>Full Boot2Root chain: command injection via an internal netcheck endpoint, Chisel pivoting to localhost services, FreePBX UCP default credential exploitation, voicemail-stored secrets, and argument injection into a root-level export service.</p>
+                            <div class="writeup-tags">
+                                <span class="writeup-tag tag-medium">Medium</span>
+                                <span class="writeup-tag">TryHackMe</span>
+                                <span class="writeup-tag">Boot2Root</span>
+                                <span class="writeup-tag">Command Injection</span>
+                                <span class="writeup-tag">Chisel Pivot</span>
+                                <span class="writeup-tag">FreePBX</span>
+                            </div>
+                        </div>
+                        <span class="writeup-arrow">&rarr;</span>
+                    </a>
+                </div>
+
+                <!-- Write-up Entry: l337 S4uc3 -->
+                <div class="writeup-entry glass" data-difficulty="medium">
+                    <a href="l337-s4uc3.html">
+                        <div class="writeup-info">
+                            <h3>l337 S4uc3 (GrrCon 2013)</h3>
+                            <p>A deep dive into network and memory forensics to reconstruct a dual-vector attack involving Zeus banking malware and a compromised phpMyAdmin web server.</p>
+                            <div class="writeup-tags">
+                                <span class="writeup-tag tag-medium">Medium</span>
+                                <span class="writeup-tag">CyberDefenders</span>
+                                <span class="writeup-tag">Network Forensics</span>
+                                <span class="writeup-tag">Memory Forensics</span>
+                                <span class="writeup-tag">PCAP</span>
+                                <span class="writeup-tag">Volatility</span>
+                            </div>
+                        </div>
+                        <span class="writeup-arrow">&rarr;</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== EASY SECTION ==================== -->
+        <section class="difficulty-section" data-difficulty-group="easy">
+            <div class="difficulty-header">
+                <div class="diff-title-wrap">
+                    <span class="diff-badge badge-easy">Easy</span>
+                    <h3>Foundational, OSINT & Targeted Challenges</h3>
+                </div>
+                <span class="diff-count">4 Machines</span>
+            </div>
+
+            <div class="writeup-list">
+                <!-- Write-up Entry: RedLine -->
+                <div class="writeup-entry glass" data-difficulty="easy">
+                    <a href="redline.html">
+                        <div class="writeup-info">
+                            <h3>RedLine Lab</h3>
+                            <p>Investigating a compromised Windows 10 host using Volatility 3 to uncover Redline Stealer, analyze in-memory process injection, and dissect a Shadowsocks VPN tunnel used to bypass perimeter NIDS.</p>
+                            <div class="writeup-tags">
+                                <span class="writeup-tag tag-easy">Easy</span>
+                                <span class="writeup-tag">CyberDefenders</span>
+                                <span class="writeup-tag">Memory Forensics</span>
+                                <span class="writeup-tag">Volatility 3</span>
+                                <span class="writeup-tag">Malware Analysis</span>
+                                <span class="writeup-tag">Process Injection</span>
+                            </div>
+                        </div>
+                        <span class="writeup-arrow">&rarr;</span>
+                    </a>
+                </div>
+
+                <!-- Write-up Entry: The Brochure -->
+                <div class="writeup-entry glass" data-difficulty="easy">
+                    <a href="byte-lotus-hotel.html">
+                        <div class="writeup-info">
+                            <h3>The Brochure</h3>
+                            <p>Investigating a suspicious hotel brochure, tracking down the digital footprint of a persona across social media platforms, and recovering the hidden flag via OSINT and Base64 reconstruction.</p>
+                            <div class="writeup-tags">
+                                <span class="writeup-tag tag-easy">Easy</span>
+                                <span class="writeup-tag">TryHackMe</span>
+                                <span class="writeup-tag">OSINT</span>
+                                <span class="writeup-tag">Base64</span>
+                            </div>
+                        </div>
+                        <span class="writeup-arrow">&rarr;</span>
+                    </a>
+                </div>
+
+                <!-- Write-up Entry: The Concierge Knows Too Much -->
+                <div class="writeup-entry glass" data-difficulty="easy">
+                    <a href="concierge-knows-too-much.html">
+                        <div class="writeup-info">
+                            <h3>The Concierge Knows Too Much</h3>
+                            <p>Exploiting identity spoofing and prompt injection against an AI hotel concierge to extract a restricted internal escalation code.</p>
+                            <div class="writeup-tags">
+                                <span class="writeup-tag tag-easy">Easy</span>
+                                <span class="writeup-tag">TryHackMe</span>
+                                <span class="writeup-tag">AI</span>
+                                <span class="writeup-tag">Prompt Injection</span>
+                                <span class="writeup-tag">Social Engineering</span>
+                            </div>
+                        </div>
+                        <span class="writeup-arrow">&rarr;</span>
+                    </a>
+                </div>
+
+                <!-- Write-up Entry: Room 404 (The Night-Shift Dev) -->
+                <div class="writeup-entry glass" data-difficulty="easy">
+                    <a href="the-night-shift-dev.html">
+                        <div class="writeup-info">
+                            <h3>Room 404</h3>
+                            <p>Using web directory enumeration to discover an exposed .git repository on the Byte Lotus hotel platform, then dumping and analyzing the leaked source code to recover the flag.</p>
+                            <div class="writeup-tags">
+                                <span class="writeup-tag tag-easy">Easy</span>
+                                <span class="writeup-tag">TryHackMe</span>
+                                <span class="writeup-tag">Web</span>
+                                <span class="writeup-tag">Directory Enumeration</span>
+                                <span class="writeup-tag">Git Exposure</span>
+                            </div>
+                        </div>
+                        <span class="writeup-arrow">&rarr;</span>
+                    </a>
+                </div>
+            </div>
+        </section>
     </main>
 
     <footer class="container">
         <p>&copy; 2026 Omar Alraas. Built with security-first principles.</p>
     </footer>
+
+    <!-- Interactive Difficulty Filter Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            const diffSections = document.querySelectorAll('.difficulty-section');
+
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    const filter = btn.dataset.filter;
+                    diffSections.forEach(section => {
+                        if (filter === 'all' || section.dataset.difficultyGroup === filter) {
+                            section.style.display = 'block';
+                        } else {
+                            section.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
 </body>
 </html>
